@@ -63,7 +63,7 @@ namespace SocksTun.Services
 		{
 			// TODO: Make this configurable
 			proxySocket.ProxyType = ProxyTypes.Socks5;
-			proxySocket.ProxyEndPoint = new IPEndPoint(IPAddress.Loopback, requestedEndPoint.Port == 443 ? 8000 : 1080);
+			proxySocket.ProxyEndPoint = new IPEndPoint(IPAddress.Loopback, 1080); //requestedEndPoint.Port == 443 ? 8000 : 1080);
 		}
 	}
 }

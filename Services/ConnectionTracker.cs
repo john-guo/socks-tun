@@ -16,8 +16,9 @@ namespace SocksTun.Services
 		private readonly Timer mappingCleanupTimer;
 		private readonly Queue<KeyValuePair<DateTime, Connection>> mappingCleanUp = new Queue<KeyValuePair<DateTime, Connection>>();
 		private readonly TCPUDPConnections tcpUdpConnections = new TCPUDPConnections { FetchTcpConnections = true };
+        private readonly TCPUDPConnections udpConnections = new TCPUDPConnections { FetchUdpConnections = true };
 
-		public ConnectionTracker(DebugWriter debug, IDictionary<string, IService> services)
+        public ConnectionTracker(DebugWriter debug, IDictionary<string, IService> services)
 		{
 			this.debug = debug;
 
@@ -61,7 +62,13 @@ namespace SocksTun.Services
 			return tcpUdpConnections.SingleOrDefault(c => c.Local.Equals(localEndPoint) && c.Remote.Equals(remoteEndPoint));
 		}
 
-		public Connection this[Connection connection]
+        public TCPUDPConnection GetUDPConnection(EndPoint localEndPoint, EndPoint remoteEndPoint)
+        {
+            udpConnections.Refresh();
+            return udpConnections.SingleOrDefault(c => c.Local.Equals(localEndPoint) && c.Remote.Equals(remoteEndPoint));
+        }
+
+        public Connection this[Connection connection]
 		{
 			get
 			{

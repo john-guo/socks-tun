@@ -1,5 +1,5 @@
 /*
-    Copyright © 2002, The KPD-Team
+    Copyright ?2002, The KPD-Team
     All rights reserved.
     http://www.mentalis.org/
 

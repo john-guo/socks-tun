@@ -97,7 +97,7 @@ namespace SocksTun
 		// simultaneously.
 		//=========================================================
 
-		private const string TAP_COMPONENT_ID = "tap0801";
+		private const string TAP_COMPONENT_ID = "tap0901";
 
 		//=========================================================
 		// .Net implementation - based on code from
@@ -150,7 +150,7 @@ namespace SocksTun
 
 		public string GetMac()
 		{
-			return DeviceIoControl<GetMacResult>(TAP_IOCTL_GET_MAC, null).mac.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + "-" + s2);
+			return DeviceIoControl<GetMacResult>(TAP_IOCTL_GET_MAC, true).mac.Select(b => b.ToString("X2")).Aggregate((s1, s2) => s1 + "-" + s2);
 		}
 
 		private struct GetVersionResult
@@ -161,13 +161,13 @@ namespace SocksTun
 
 		public Version GetVersion()
 		{
-			var data = DeviceIoControl<GetVersionResult>(TAP_IOCTL_GET_VERSION, null);
-			return new Version(data.version[0], data.version[1], data.version[2]);
-		}
+            var data = DeviceIoControl<GetVersionResult>(TAP_IOCTL_GET_VERSION, true);
+            return new Version(data.version[0], data.version[1], data.version[2]);
+        }
 
 		public int GetMtu()
 		{
-			return DeviceIoControl<int>(TAP_IOCTL_GET_MTU, null);
+			return DeviceIoControl<int>(TAP_IOCTL_GET_MTU, true);
 		}
 
 		private struct GetInfoResult
@@ -178,7 +178,7 @@ namespace SocksTun
 
 		public string GetInfo()
 		{
-			return DeviceIoControl<GetInfoResult>(TAP_IOCTL_GET_INFO, null).info;
+			return DeviceIoControl<GetInfoResult>(TAP_IOCTL_GET_INFO, true).info;
 		}
 
 		public byte SetMediaStatus(bool state)
@@ -281,7 +281,7 @@ namespace SocksTun
 		private T DeviceIoControl<T>(uint ioctl, object data)
 		{
 			var nInBufferSize = data != null ? data is byte[] ? ((byte[])data).Length : Marshal.SizeOf(data) : 0;
-			var pInBuffer = Marshal.AllocHGlobal(nInBufferSize);
+			var pInBuffer =  nInBufferSize == 0 ? IntPtr.Zero : Marshal.AllocHGlobal(nInBufferSize);
 			var nOutBufferSize = Marshal.SizeOf(typeof(T));
 			var pOutBuffer = Marshal.AllocHGlobal(nOutBufferSize);
 			try

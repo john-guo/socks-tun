@@ -36,6 +36,8 @@ namespace SocksTun.Services
 
 		public void Start()
 		{
+			tunTapDevice.SetMediaStatus(true);
+
 			connectionTracker = (ConnectionTracker)services["connectionTracker"];
 			transparentSocksServer = (TransparentSocksServer)services["transparentSocksServer"];
 
@@ -64,8 +66,6 @@ namespace SocksTun.Services
 				)
 			);
 
-			tunTapDevice.SetMediaStatus(true);
-
 			BeginRun(NatterStopped, null);
 		}
 
@@ -91,6 +91,12 @@ namespace SocksTun.Services
 
 		public void Run()
 		{
+            Dictionary<ProtocolType, int> checksumOffset = new Dictionary<ProtocolType, int>()
+            {
+                { ProtocolType.Udp, 6 },
+                { ProtocolType.Tcp, 16 },
+            };
+
 			running = true;
 			while (running)
 			{
@@ -114,11 +120,12 @@ namespace SocksTun.Services
 
 				switch (protocol)
 				{
-					case ProtocolType.Tcp:
+                    //case ProtocolType.Udp:
+                    case ProtocolType.Tcp:
 						{
 							var sourcePortOffset = headerLength + 0;
 							var destinationPortOffset = headerLength + 2;
-							var tcpCheckSumOffset = headerLength + 16;
+                            var tcpCheckSumOffset = headerLength + checksumOffset[protocol];
 
 							var sourcePort = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buf, sourcePortOffset)) & 0xffff;
 							var destinationPort = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buf, destinationPortOffset)) & 0xffff;
