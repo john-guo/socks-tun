@@ -8,6 +8,7 @@ SocksTun - Using a TUN device to access network resources via a Socks server.  A
 目前不支持udp，以后也许会添加对udp支持（缺少测试环境的情况下，实现这个可能性很低）。
 
 TODO list
+
 需要在路由表中添加socks服务器地址以避免从tun连socks服务器，如果是本地socks转发代理，则需要把socks的外网真实ip添加到路由表中，计划添加该部分功能，以方便使用。
 
 为避免某些地址走tun，需要设置一个白名单ip路由表。
