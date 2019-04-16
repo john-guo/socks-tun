@@ -9,8 +9,11 @@ SocksTun - Using a TUN device to access network resources via a Socks server.  A
 
 TODO list
 需要在路由表中添加socks服务器地址以避免从tun连socks服务器，如果是本地socks转发代理，则需要把socks的外网真实ip添加到路由表中，计划添加该部分功能，以方便使用。
+
 为避免某些地址走tun，需要设置一个白名单ip路由表。
+
 把windows设置成路由模式，可以让其他设备通过该工具走socks代理。
+
 出一个整合包，把tap-windows一起整合进来，方便安装使用。
 
 
