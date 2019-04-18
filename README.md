@@ -10,7 +10,8 @@ SocksTun - Using a TUN device to access network resources via a Socks server.  A
 
 TODO list
 
-需要在路由表中添加socks服务器地址以避免从tun连socks服务器，如果是本地socks转发代理，则需要把socks的外网真实ip添加到路由表中，计划添加该部分功能，以方便使用。
+~~需要在路由表中添加socks服务器地址以避免从tun连socks服务器，如果是本地socks转发代理，则需要把socks的外网真实ip添加到路由表中，计划添加该部分功能，以方便使用。~~
+已添加自动路由功能，但为了能正确识别外发网络接口，app.config增加了一个网卡名配置项AdapterName，暂时以此识别代理外发网卡。
 
 为避免某些地址走tun，需要设置一个白名单ip路由表。
 
