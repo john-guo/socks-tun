@@ -5,7 +5,8 @@ SocksTun - Using a TUN device to access network resources via a Socks server.  A
 
 原理是修改tun上的tcp/ip源目标地址及端口，使数据包重定向到指定的监听端口，这样就让所有走tun的tcp都连接到本地端口，再由程序把数据包转发到socks代理服务器上。
 
-目前不支持udp，以后也许会添加对udp支持（缺少测试环境的情况下，实现这个可能性很低）。
+~~目前不支持udp，以后也许会添加对udp支持（缺少测试环境的情况下，实现这个可能性很低）。~~
+添加对udp支持，但是由于缺少udp socks5测试服务器，这个功能目前还是实验阶段，需要在编译时添加条件编译符USEUDP。
 
 TODO list
 
@@ -13,7 +14,8 @@ TODO list
 
 为避免某些地址走tun，需要设置一个白名单ip路由表。
 
-把windows设置成路由模式，可以让其他设备通过该工具走socks代理。
+~~把windows设置成路由模式，可以让其他设备通过该工具走socks代理。~~
+暂时添加了一个脚本iprouter.bat来把当前系统设置成路由，需要管理员运行并重启。
 
 出一个整合包，把tap-windows一起整合进来，方便安装使用。
 

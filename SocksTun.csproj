@@ -121,6 +121,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="scripts\addrouter.bat" />
+    <None Include="scripts\iprouter_disable.bat" />
     <None Include="scripts\iprouter.bat" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
