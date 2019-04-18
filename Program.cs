@@ -1,7 +1,10 @@
-﻿using System;
+﻿using SocksTun.Properties;
+using System;
 using System.Collections.Generic;
 using System.Configuration.Install;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
@@ -15,7 +18,13 @@ namespace SocksTun
 		/// </summary>
 		static void Main(string[] args)
 		{
+            Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
+
+            RouterHelper.SetupDefaultGateway(Settings.Default.AdapterName);
+
             (new SocksTunService()).Run(args);
+
+            RouterHelper.Cleanup();
             return;
 #if false
             if (args.Length > 0)

@@ -112,5 +112,14 @@ namespace SocksTun.Properties {
                 return ((string)(this["TunTapDevice"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("以太网")]
+        public string AdapterName {
+            get {
+                return ((string)(this["AdapterName"]));
+            }
+        }
     }
 }

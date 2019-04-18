@@ -59,12 +59,14 @@ namespace SocksTun.Services
 
 			tunTapDevice.ConfigDhcpSetOptions(
 				new DhcpOption.Routers(
-					dhcpServerAddr
-				),
+                    dhcpServerAddr
+                ),
 				new DhcpOption.VendorOptions(
 					new DhcpVendorOption.NetBIOSOverTCP(2)
 				)
 			);
+
+            RouterHelper.SetupTapGateway(tunTapDevice.Guid, localIP);
 
             BeginRun(NatterStopped, null);
 		}

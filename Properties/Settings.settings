@@ -32,5 +32,8 @@
     <Setting Name="TunTapDevice" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="AdapterName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">以太网</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
