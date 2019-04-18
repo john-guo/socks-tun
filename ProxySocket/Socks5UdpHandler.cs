@@ -29,12 +29,14 @@
 */
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Org.Mentalis.Network.ProxySocket.Authentication;
+using SocksTun.Properties;
 
-#if false
+#if USEUDP
 
 namespace Org.Mentalis.Network.ProxySocket {
 	/// <summary>
@@ -43,6 +45,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 	internal sealed class Socks5UdpHandler : SocksHandler {
 
         UdpClient udpClient;
+        int localPort;
 
 		/// <summary>
 		/// Initiliazes a new Socks5Handler instance.
@@ -66,16 +69,17 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <exception cref="ArgumentNullException"><c>server</c> -or- <c>user</c> -or- <c>pass</c> is null.</exception>
 		public Socks5UdpHandler(Socket server, string user, string pass) : base(server, user) {
 			Password = pass;
-            udpClient = new UdpClient();
-		}
-		/// <summary>
-		/// Starts the synchronous authentication process.
-		/// </summary>
-		/// <exception cref="ProxyException">Authentication with the proxy server failed.</exception>
-		/// <exception cref="ProtocolViolationException">The proxy server uses an invalid protocol.</exception>
-		/// <exception cref="SocketException">An operating system error occurs while accessing the Socket.</exception>
-		/// <exception cref="ObjectDisposedException">The Socket has been closed.</exception>
-		private void Authenticate() {
+            udpClient = new UdpClient(Settings.Default.SocksPort + 1);
+            localPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
+        }
+        /// <summary>
+        /// Starts the synchronous authentication process.
+        /// </summary>
+        /// <exception cref="ProxyException">Authentication with the proxy server failed.</exception>
+        /// <exception cref="ProtocolViolationException">The proxy server uses an invalid protocol.</exception>
+        /// <exception cref="SocketException">An operating system error occurs while accessing the Socket.</exception>
+        /// <exception cref="ObjectDisposedException">The Socket has been closed.</exception>
+        private void Authenticate() {
 			Server.Send(new byte [] {5, 2, 0, 2});
 			byte[] buffer = ReadBytes(2);
 			if (buffer[1] == 255)
@@ -94,45 +98,21 @@ namespace Org.Mentalis.Network.ProxySocket {
 			authenticate.Authenticate();
 		}
 		/// <summary>
-		/// Creates an array of bytes that has to be sent when the user wants to connect to a specific host/port combination.
-		/// </summary>
-		/// <param name="host">The host to connect to.</param>
-		/// <param name="port">The port to connect to.</param>
-		/// <returns>An array of bytes that has to be sent when the user wants to connect to a specific host/port combination.</returns>
-		/// <exception cref="ArgumentNullException"><c>host</c> is null.</exception>
-		/// <exception cref="ArgumentException"><c>port</c> or <c>host</c> is invalid.</exception>
-		private byte[] GetHostPortBytes(string host, int port) {
-			if (host == null)
-				throw new ArgumentNullException();
-			if (port <= 0 || port > 65535 || host.Length > 255)
-				throw new ArgumentException();
-			byte [] connect = new byte[7 + host.Length];
-			connect[0] = 5;
-			connect[1] = 3;
-			connect[2] = 0; //reserved
-			connect[3] = 3;
-			connect[4] = (byte)host.Length;
-			Array.Copy(Encoding.ASCII.GetBytes(host), 0, connect, 5, host.Length);
-			Array.Copy(PortToBytes(port), 0, connect, host.Length + 5, 2);
-			return connect;
-		}
-		/// <summary>
 		/// Creates an array of bytes that has to be sent when the user wants to connect to a specific IPEndPoint.
 		/// </summary>
 		/// <param name="remoteEP">The IPEndPoint to connect to.</param>
 		/// <returns>An array of bytes that has to be sent when the user wants to connect to a specific IPEndPoint.</returns>
 		/// <exception cref="ArgumentNullException"><c>remoteEP</c> is null.</exception>
-		private byte[] GetEndPointBytes(IPEndPoint remoteEP) {
-			if (remoteEP == null)
-				throw new ArgumentNullException();
+		private byte[] GetEndPointBytes() {
 			byte [] connect = new byte[10];
+            Array.Clear(connect, 0, connect.Length);
 			connect[0] = 5;
 			connect[1] = 3;
 			connect[2] = 0; //reserved
 			connect[3] = 1;
 			//Array.Copy(AddressToBytes(remoteEP.Address.Address), 0, connect, 4, 4);
-			Array.Copy(remoteEP.Address.GetAddressBytes(), 0, connect, 4, 4);
-			Array.Copy(PortToBytes(remoteEP.Port), 0, connect, 8, 2);
+			//Array.Copy(remoteEP.Address.GetAddressBytes(), 0, connect, 4, 4);
+			Array.Copy(PortToBytes(localPort), 0, connect, 8, 2);
 			return connect;
 		}
 		/// <summary>
@@ -147,7 +127,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <exception cref="ObjectDisposedException">The Socket has been closed.</exception>
 		/// <exception cref="ProtocolViolationException">The proxy server uses an invalid protocol.</exception>
 		public override void Negotiate(string host, int port) {
-			Negotiate(GetHostPortBytes(host, port));
+            Negotiate(GetEndPointBytes());
 		}
 		/// <summary>
 		/// Starts negotiating with the SOCKS server.
@@ -159,7 +139,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <exception cref="ObjectDisposedException">The Socket has been closed.</exception>
 		/// <exception cref="ProtocolViolationException">The proxy server uses an invalid protocol.</exception>
 		public override void Negotiate(IPEndPoint remoteEP) {
-			Negotiate(GetEndPointBytes(remoteEP));
+            Negotiate(GetEndPointBytes());
 		}
 		/// <summary>
 		/// Starts negotiating with the SOCKS server.
@@ -223,7 +203,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <returns>An IAsyncProxyResult that references the asynchronous connection.</returns>
 		public override IAsyncProxyResult BeginNegotiate(string host, int port, HandShakeComplete callback, IPEndPoint proxyEndPoint) {
 			ProtocolComplete = callback;
-			HandShake = GetHostPortBytes(host, port);
+			HandShake = GetEndPointBytes();
 			Server.BeginConnect(proxyEndPoint, new AsyncCallback(this.OnConnect), Server);
 			AsyncResult = new IAsyncProxyResult();
 			return AsyncResult;
@@ -237,7 +217,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <returns>An IAsyncProxyResult that references the asynchronous connection.</returns>
 		public override IAsyncProxyResult BeginNegotiate(IPEndPoint remoteEP, HandShakeComplete callback, IPEndPoint proxyEndPoint) {
 			ProtocolComplete = callback;
-			HandShake = GetEndPointBytes(remoteEP);
+			HandShake = GetEndPointBytes();
 			Server.BeginConnect(proxyEndPoint, new AsyncCallback(this.OnConnect), Server);
 			AsyncResult = new IAsyncProxyResult();
 			return AsyncResult;
@@ -441,21 +421,89 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <summary>Holds the value of the HandShake property.</summary>
 		private byte[] m_HandShake;
 
-        public override IAsyncResult BeginUdpReceive(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback, object state)
+
+        public override IAsyncResult UdpBeginReceive(AsyncCallback callback, object state) => udpClient.BeginReceive(callback, state);
+
+
+        public override byte[] UdpEndReceive(IAsyncResult ar, ref IPEndPoint ep)
         {
-            return udpClient.Client.BeginReceive(buffer, offset, size, socketFlags, callback, state);
+            byte[] pkg = udpClient.EndReceive(ar, ref ep);
+            var data = GetData(pkg, out IPEndPoint realep);
+            ep = realep;
+            return data;
         }
 
-        public override int EndUdpReceive(IAsyncResult asyncResult)
+        private byte[] GetData(byte[] pkg, out IPEndPoint ep)
         {
-            return udpClient.Client.EndReceive(asyncResult);
+            var port = new byte[2];
+            IPAddress ipAddress;
+            byte[] data;
+            int ipPort;
+            if (pkg[2] != 0)
+            {
+                Server.Close();
+                throw new NotSupportedException("Not support FRAG");
+            }
+            switch (pkg[3])
+            {
+                case 4:
+                case 1:
+                    {
+                        var addr =  new byte[pkg[3] == 1 ? 4 : 16];
+
+                        System.Buffer.BlockCopy(pkg, 4, addr, 0, addr.Length);
+
+                        ipAddress = new IPAddress(addr);
+
+                        System.Buffer.BlockCopy(pkg, 4 + addr.Length, port, 0, port.Length);
+
+                        ipPort = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(port, 0));
+
+                        var dataOffset = 4 + addr.Length + port.Length;
+                        data = new byte[pkg.Length - dataOffset];
+                        System.Buffer.BlockCopy(pkg, dataOffset, data, 0, data.Length);
+                    }
+                    break;
+                case 3:
+                    {
+                        var addr = new byte[pkg[4]];
+                        System.Buffer.BlockCopy(pkg, 5, addr, 0, addr.Length);
+
+                        var address = Encoding.UTF8.GetString(addr);
+                        ipAddress = Dns.GetHostAddresses(address).First();
+
+                        System.Buffer.BlockCopy(pkg, 5 + addr.Length, port, 0, port.Length);
+                        ipPort = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(port, 0));
+
+                        var dataOffset = 5 + addr.Length + port.Length;
+                        data = new byte[pkg.Length - dataOffset];
+                        System.Buffer.BlockCopy(pkg, dataOffset, data, 0, data.Length);
+                    }
+                    break;
+
+                default:
+                    Server.Close();
+                    throw new ProtocolViolationException();
+            }
+
+            ep = new IPEndPoint(ipAddress, ipPort);
+            return data;
         }
 
-        public override int UdpSend(byte[] buffer, int offset, int size, SocketFlags socketFlags)
+        public override int UdpSend(byte[] buffer, IPEndPoint ep)
         {
-            return udpClient.Client.Send(buffer, offset, size, socketFlags);
+            byte[] data = new byte[10 + buffer.Length];
+            data[0] = 0;
+            data[1] = 0;
+            data[2] = 0;
+            data[3] = 1;
+            System.Buffer.BlockCopy(ep.Address.GetAddressBytes(), 0, data, 4, 4);
+            System.Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)ep.Port)), 0, data, 8, 2);
+            return udpClient.Send(data, data.Length);
         }
     }
+
+
 }
 
 #endif

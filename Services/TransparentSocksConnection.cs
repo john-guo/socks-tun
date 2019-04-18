@@ -29,7 +29,7 @@ namespace SocksTun.Services
 		{
 			var localEndPoint = (IPEndPoint)client.LocalEndPoint;
 			var remoteEndPoint = (IPEndPoint)client.RemoteEndPoint;
-			var connection = connectionTracker[new Connection(ProtocolType.Tcp, localEndPoint, remoteEndPoint)].Mirror;
+			var connection = connectionTracker[new Connection(ProtocolType.Tcp, localEndPoint, remoteEndPoint)]?.Mirror;
 
 			if (connection != null)
 			{

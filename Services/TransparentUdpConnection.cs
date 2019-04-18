@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using Org.Mentalis.Network.ProxySocket;
 using SocksTun.Properties;
 
-#if false
+#if USEUDP
 
 namespace SocksTun.Services
 {
@@ -17,6 +19,10 @@ namespace SocksTun.Services
 		private readonly DebugWriter debug;
 		private readonly ConnectionTracker connectionTracker;
 		private readonly ConfigureProxySocket configureProxySocket;
+        private readonly ProxySocket proxy;
+        private readonly IPEndPoint localEndPoint;
+        internal volatile bool running = true;
+        private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<IPEndPoint>> connectionQueue;
 
         Dictionary<Connection, ProxySocket> relays = new Dictionary<Connection, ProxySocket>();
 
@@ -24,101 +30,121 @@ namespace SocksTun.Services
 
 		public TransparentUdpConnection(UdpClient client, DebugWriter debug, ConnectionTracker connectionTracker, ConfigureProxySocket configureProxySocket)
 		{
-			this.client = client;
+            connectionQueue = new ConcurrentDictionary<IPEndPoint, ConcurrentQueue<IPEndPoint>>();
+
+            this.client = client;
 			this.debug = debug;
 			this.connectionTracker = connectionTracker;
 			this.configureProxySocket = configureProxySocket;
-		}
+            this.proxy = new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            configureProxySocket(proxy, null);
 
-        class ProxyObject
-        {
-            public ProxySocket Proxy { get; set; }
-            public Connection Connection { get; set; }
-
-            public byte[] Buffer { get; set; }
+            localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
+            if (localEndPoint.Address.Equals(IPAddress.Any))
+            {
+                localEndPoint = new IPEndPoint(IPAddress.Parse(Settings.Default.IPAddress), localEndPoint.Port);
+            }
         }
 
-		public void Process()
+        public void Process()
 		{
-            var running = true;
+            var ep = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+            proxy.Connect(ep);
+
+            client.BeginReceive(ReceiveCallback, null);
+            proxy.UdpBeginReceive(UdpReceiveCallback, null);
+
             while (running)
             {
-
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
-                byte[] data = client.Receive(ref remoteEndPoint);
-
-                var localEndPoint = (IPEndPoint)client.Client.LocalEndPoint;
-                if (localEndPoint.Address.Equals(IPAddress.Any))
-                {
-                    localEndPoint = new IPEndPoint(IPAddress.Parse(Settings.Default.IPAddress), localEndPoint.Port);
-                }
-                var connection = connectionTracker[new Connection(ProtocolType.Udp, localEndPoint, remoteEndPoint)].Mirror;
-
-                if (connection != null)
-                {
-                    var initialEndPoint = connection.Source;
-                    var requestedEndPoint = connection.Destination;
-                    var udpConnection = connectionTracker.GetUDPConnection(initialEndPoint, requestedEndPoint);
-
-                    var logMessage = string.Format("{0}[{1}] {2} {{0}} connection to {3}",
-                        udpConnection != null ? udpConnection.ProcessName : "unknown",
-                        udpConnection != null ? udpConnection.PID : 0,
-                        initialEndPoint, requestedEndPoint);
-                    try
-                    {
-                        ProxySocket proxy;
-                        if (!relays.ContainsKey(connection))
-                        {
-                            proxy = new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                            configureProxySocket(proxy, requestedEndPoint);
-                            debug.Log(1, logMessage + " via {1}", "requested", proxy.ProxyEndPoint);
-
-                            proxy.Connect(requestedEndPoint);
-
-                            relays[connection] = proxy;
-                            var buffer = new byte[10000];
-                            proxy.BeginUdpReceive(buffer, 0, 10000, SocketFlags.None, ReceiveCallback, new ProxyObject() { Connection = connection, Proxy = proxy, Buffer = buffer });
-                        }
-                        else
-                        {
-                            proxy = relays[connection];
-                        }
-
-                        proxy.UdpSend(data, 0, data.Length, SocketFlags.None);
-
-                        //proxy.Close();
-                        //debug.Log(1, logMessage, "closing");
-                    }
-                    catch (Exception ex)
-                    {
-                        debug.Log(1, logMessage + ": {1}", "failed", ex.Message);
-                    }
-
-                    connectionTracker.QueueForCleanUp(connection);
-                }
-                else
-                {
-                    var udpConnection = connectionTracker.GetUDPConnection(remoteEndPoint, localEndPoint);
-                    debug.Log(1, "{0}[{1}] {2} has no mapping",
-                        udpConnection != null ? udpConnection.ProcessName : "unknown",
-                        udpConnection != null ? udpConnection.PID : 0,
-                        remoteEndPoint);
-                    //client.Send(Encoding.ASCII.GetBytes("No mapping\r\n"));
-                }
+                Thread.Sleep(0);
             }
 			client.Close();
 		}
 
+        private bool trackConnection(Connection connection, IPEndPoint remoteEndPoint, out IPEndPoint targetEndPoint)
+        {
+            targetEndPoint = remoteEndPoint;
+            if (connection != null)
+            {
+                var initialEndPoint = connection.Source;
+                var requestedEndPoint = connection.Destination;
+                var udpConnection = connectionTracker.GetUDPConnection(initialEndPoint, requestedEndPoint);
+
+                var logMessage = string.Format("UDP {0}[{1}] {2} {{0}} connection to {3}",
+                    udpConnection != null ? udpConnection.ProcessName : "unknown",
+                    udpConnection != null ? udpConnection.PID : 0,
+                    initialEndPoint, requestedEndPoint);
+
+                if (!connectionQueue.TryGetValue(requestedEndPoint, out ConcurrentQueue<IPEndPoint> queue))
+                {
+                    queue = new ConcurrentQueue<IPEndPoint>();
+                    connectionQueue.TryAdd(requestedEndPoint, queue);
+                }
+                queue.Enqueue(remoteEndPoint);
+
+                return true;
+            }
+            else
+            {
+                if (!connectionQueue.TryGetValue(remoteEndPoint, out ConcurrentQueue<IPEndPoint> queue))
+                {
+
+                    var udpConnection = connectionTracker.GetUDPConnection(remoteEndPoint, localEndPoint);
+                    debug.Log(1, "UDP {0}[{1}] {2} has no mapping",
+                        udpConnection != null ? udpConnection.ProcessName : "unknown",
+                        udpConnection != null ? udpConnection.PID : 0,
+                        remoteEndPoint);
+                    return false;
+                }
+                else
+                {
+                    if (!queue.TryDequeue(out targetEndPoint))
+                    {
+                        var udpConnection = connectionTracker.GetUDPConnection(remoteEndPoint, localEndPoint);
+                        debug.Log(1, "UDP {0}[{1}] {2} has no mapping",
+                            udpConnection != null ? udpConnection.ProcessName : "unknown",
+                            udpConnection != null ? udpConnection.PID : 0,
+                            remoteEndPoint);
+                        return false;
+                    }
+
+                    var logMessage = string.Format($"remapping {remoteEndPoint} connection to {targetEndPoint}");
+                    debug.Log(1, logMessage);
+                    return true;
+                }
+
+            }
+        }
+
+        private void UdpReceiveCallback(IAsyncResult ar)
+        {
+            var remoteEndPoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+            var data = proxy.UdpEndReceive(ar, ref remoteEndPoint);
+            var connection = connectionTracker[new Connection(ProtocolType.Udp, localEndPoint, remoteEndPoint)]?.Mirror;
+            if (trackConnection(connection, remoteEndPoint, out IPEndPoint targetEndPoint))
+            {
+                client.Send(data, data.Length, targetEndPoint);
+                //connection = connectionTracker[new Connection(ProtocolType.Udp, localEndPoint, targetEndPoint)]?.Mirror;
+                //if (connection != null)
+                //{
+                //    client.Send(data, data.Length, connection.Source);
+                //}
+            }
+
+            proxy.UdpBeginReceive(UdpReceiveCallback, null);
+        }
+
         private void ReceiveCallback(IAsyncResult ar)
         {
-            var obj = ar.AsyncState as ProxyObject;
-            int size = obj.Proxy.EndUdpReceive(ar);
-            byte[] sendBuf = new byte[size];
-            System.Buffer.BlockCopy(obj.Buffer, 0, sendBuf, 0, size);
+            var remoteEndPoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+            var data = client.EndReceive(ar, ref remoteEndPoint);
+            var connection = connectionTracker[new Connection(ProtocolType.Udp, localEndPoint, remoteEndPoint)]?.Mirror;
+            if (trackConnection(connection, remoteEndPoint, out _))
+            {
+                proxy.UdpSend(data, connection.Destination);
+            }
 
-            obj.Proxy.BeginUdpReceive(obj.Buffer, 0, 10000, SocketFlags.None, ReceiveCallback, new ProxyObject() { Connection = obj.Connection, Proxy = obj.Proxy, Buffer = obj.Buffer });
-
-            client.Send(sendBuf, size, obj.Connection.Source);
+            client.BeginReceive(ReceiveCallback, null);
         }
 
     }

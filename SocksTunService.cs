@@ -15,7 +15,7 @@ namespace SocksTun
 		public SocksTunService()
 		{
 			InitializeComponent();
-			debug.LogLevel = 5;
+			debug.LogLevel = 2;
 		}
 
 		public void Run(string[] args)
@@ -49,10 +49,19 @@ namespace SocksTun
 			services["logServer"].Start();
 			services["transparentSocksServer"].Start();
 
+#if USEUDP
+            services["transparentUdpServer"] = new TransparentUdpServer(debug, services);
+            services["transparentUdpServer"].Start();
+#endif
+
         }
 
-		protected override void OnStop()
+        protected override void OnStop()
 		{
+#if USEUDP
+            services["transparentUdpServer"].Stop();
+#endif
+
             services["transparentSocksServer"].Stop();
 			services["logServer"].Stop();
 			services["natter"].Stop();

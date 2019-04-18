@@ -7,7 +7,7 @@ using System.Text;
 using Org.Mentalis.Network.ProxySocket;
 using SocksTun.Properties;
 
-#if false
+#if USEUDP
 
 namespace SocksTun.Services
 {
@@ -20,7 +20,9 @@ namespace SocksTun.Services
 		private ConnectionTracker connectionTracker;
 		public int Port { get; private set; }
 
-		public TransparentUdpServer(DebugWriter debug, IDictionary<string, IService> services)
+        private TransparentUdpConnection connection;
+
+        public TransparentUdpServer(DebugWriter debug, IDictionary<string, IService> services)
 		{
 			this.debug = debug;
 			this.services = services;
@@ -35,14 +37,15 @@ namespace SocksTun.Services
 
 			Port = ((IPEndPoint) transparentSocksServer.Client.LocalEndPoint).Port;
 			debug.Log(0, "TransparentUdpPort = " + Port);
-            var connection = new TransparentUdpConnection(transparentSocksServer, debug, connectionTracker, ConfigureSocksProxy);
+            connection = new TransparentUdpConnection(transparentSocksServer, debug, connectionTracker, ConfigureSocksProxy);
             connection.Process();
         }
 
         public void Stop()
 		{
-			// TODO: This should close established connections
-		}
+            connection.running = false;
+            // TODO: This should close established connections
+        }
 
 		private static void ConfigureSocksProxy(ProxySocket proxySocket, IPEndPoint requestedEndPoint)
 		{

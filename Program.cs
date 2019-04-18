@@ -15,7 +15,10 @@ namespace SocksTun
 		/// </summary>
 		static void Main(string[] args)
 		{
-			if (args.Length > 0)
+            (new SocksTunService()).Run(args);
+            return;
+#if false
+            if (args.Length > 0)
 			{
 				switch (args[0].ToLower())
 				{
@@ -42,12 +45,14 @@ namespace SocksTun
 						return;
 				}
 			}
+
 			ServiceBase[] ServicesToRun;
 			ServicesToRun = new ServiceBase[] 
 			{ 
 				new SocksTunService() 
 			};
 			ServiceBase.Run(ServicesToRun);
+#endif
 		}
 	}
 }

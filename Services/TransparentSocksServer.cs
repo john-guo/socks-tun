@@ -17,6 +17,8 @@ namespace SocksTun.Services
 
 		private ConnectionTracker connectionTracker;
 		public int Port { get; private set; }
+        public IPAddress Address { get; private set; }
+
 
 		public TransparentSocksServer(DebugWriter debug, IDictionary<string, IService> services)
 		{
@@ -33,7 +35,9 @@ namespace SocksTun.Services
 
 			transparentSocksServer.Start();
 			Port = ((IPEndPoint) transparentSocksServer.LocalEndpoint).Port;
-			debug.Log(0, "TransparentSocksPort = " + Port);
+            Address = IPAddress.Parse(Settings.Default.IPAddress);
+
+            debug.Log(0, $"TransparentSocks = {Address}:{Port}");
 			transparentSocksServer.BeginAcceptSocket(NewTransparentSocksConnection, null);
 		}
 

@@ -52,10 +52,10 @@ namespace SocksTun.Services
 			var remoteNetmask = IPAddress.Parse(Settings.Default.RemoteNetmask);
 			tunTapDevice.ConfigTun(localIP, remoteNetwork, remoteNetmask);
 
-			var adapterNetmask = IPAddress.Parse(Settings.Default.DHCPNetmask);
-			var dhcpServerAddr = IPAddress.Parse(Settings.Default.DHCPServer);
-			var dhcpLeaseTime = Settings.Default.DHCPLeaseTime;
-			tunTapDevice.ConfigDhcpMasq(localIP, adapterNetmask, dhcpServerAddr, dhcpLeaseTime);
+            var adapterNetmask = IPAddress.Parse(Settings.Default.DHCPNetmask);
+            var dhcpServerAddr = IPAddress.Parse(Settings.Default.DHCPServer);
+            var dhcpLeaseTime = Settings.Default.DHCPLeaseTime;
+            tunTapDevice.ConfigDhcpMasq(localIP, adapterNetmask, dhcpServerAddr, dhcpLeaseTime);
 
 			tunTapDevice.ConfigDhcpSetOptions(
 				new DhcpOption.Routers(
@@ -66,7 +66,7 @@ namespace SocksTun.Services
 				)
 			);
 
-			BeginRun(NatterStopped, null);
+            BeginRun(NatterStopped, null);
 		}
 
 		private void NatterStopped(IAsyncResult ar)
@@ -106,7 +106,10 @@ namespace SocksTun.Services
 				var packetOffset = 0;
 
 				var version = buf[packetOffset] >> 4;
-				if (version != 0x4) continue; // IPv4
+                if (version != 0x4) // IPv4
+                {
+                    continue; 
+                }
 
 				var checkSumOffset = packetOffset + 10;
 				var sourceOffset = packetOffset + 12;
@@ -119,8 +122,11 @@ namespace SocksTun.Services
 				var destination = new IPAddress(BitConverter.ToInt32(buf, destinationOffset) & 0xffffffff);
 
 				switch (protocol)
-				{
-                    //case ProtocolType.Udp:
+                {
+
+#if USEUDP
+                    case ProtocolType.Udp:
+#endif      
                     case ProtocolType.Tcp:
 						{
 							var sourcePortOffset = headerLength + 0;
@@ -161,34 +167,42 @@ namespace SocksTun.Services
 							SetArray(pseudoPacket, 10, BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)(tcpLength))));
 							Array.Copy(buf, headerLength, pseudoPacket, 12, tcpLength);
 							SetArray(buf, tcpCheckSumOffset, BitConverter.GetBytes(generateIPChecksum(pseudoPacket, pseudoPacket.Length)));
-						}
-						break;
+                        }
+                        break;
 					default:
 						{
-							//
-							// Reverse IPv4 addresses and send back to tun
-							//
-							SetArray(buf, sourceOffset, destination.GetAddressBytes());
-							SetArray(buf, destinationOffset, source.GetAddressBytes());
-						}
+                            //
+                            // Reverse IPv4 addresses and send back to tun
+                            //
+                            SetArray(buf, sourceOffset, destination.GetAddressBytes());
+                            SetArray(buf, destinationOffset, source.GetAddressBytes());
+                        }
 						break;
 				}
 
-				// Fix IP checksum
-				SetArray(buf, checkSumOffset, BitConverter.GetBytes((ushort)0));
-				SetArray(buf, checkSumOffset, BitConverter.GetBytes(generateIPChecksum(buf, headerLength)));
+                // Fix IP checksum
+                SetArray(buf, checkSumOffset, BitConverter.GetBytes((ushort)0));
+                SetArray(buf, checkSumOffset, BitConverter.GetBytes(generateIPChecksum(buf, headerLength)));
 
-				debug.LogBuffer("<", buf, bytesRead);
-				tap.Write(buf, 0, bytesRead);
+                debug.LogBuffer("<", buf, bytesRead);
+                tap.Write(buf, 0, bytesRead);
 			}
 		}
 
 		private Connection getExpectedConnection(ProtocolType protocol, IPEndPoint sourceEndPoint, IPEndPoint destinationEndPoint)
 		{
-			// TODO: Make this configurable
-			var expectSourceEndPoint = new IPEndPoint(destinationEndPoint.Address, sourceEndPoint.Port);
-			var expectDestinationEndPoint = new IPEndPoint(sourceEndPoint.Address, transparentSocksServer.Port);
-			return new Connection(protocol, expectSourceEndPoint, expectDestinationEndPoint);
+            // TODO: Make this configurable
+            var address = destinationEndPoint.Address.GetAddressBytes().Zip(sourceEndPoint.Address.GetAddressBytes(), (a, b) => (byte)(a ^ b)).ToArray();
+            var srcAddr = new IPAddress(address);
+
+            var expectSourceEndPoint = new IPEndPoint(srcAddr, sourceEndPoint.Port);
+            //var expectSourceEndPoint = new IPEndPoint(destinationEndPoint.Address, sourceEndPoint.Port);
+            //var expectDestinationEndPoint = new IPEndPoint(sourceEndPoint.Address, transparentSocksServer.Port);
+            //var expectSourceEndPoint = new IPEndPoint(sourceEndPoint.Address, sourceEndPoint.Port);
+            //var target = IPAddress.Parse("192.168.1.91");
+            var target = transparentSocksServer.Address;
+            var expectDestinationEndPoint = new IPEndPoint(target, transparentSocksServer.Port);
+            return new Connection(protocol, expectSourceEndPoint, expectDestinationEndPoint);
 		}
 
 		private static ushort generateIPChecksum(byte[] arBytes, int nSize)
@@ -262,7 +276,7 @@ namespace SocksTun.Services
 				AsyncWaitHandle = new ManualResetEvent(false);
 			}
 
-			#region Implementation of IAsyncResult
+#region Implementation of IAsyncResult
 
 			public bool IsCompleted
 			{
@@ -284,7 +298,7 @@ namespace SocksTun.Services
 				get; set;
 			}
 
-			#endregion
+#endregion
 		}
 	}
 }

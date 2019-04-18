@@ -201,19 +201,12 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <returns>An IAsyncProxyResult that references the asynchronous connection.</returns>
 		public abstract IAsyncProxyResult BeginNegotiate(string host, int port, HandShakeComplete callback, IPEndPoint proxyEndPoint);
 
-        //public virtual IAsyncResult BeginUdpReceive(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback, object state)
-        //{
-        //    throw new NotSupportedException();
-        //}
+#if USEUDP
+        public virtual IAsyncResult UdpBeginReceive(AsyncCallback callback, object state) => throw new NotSupportedException();
 
-        //public virtual int EndUdpReceive(IAsyncResult asyncResult)
-        //{
-        //    throw new NotSupportedException();
-        //}
+        public virtual byte[] UdpEndReceive(IAsyncResult ar, ref IPEndPoint ep) => throw new NotSupportedException();
 
-        //public virtual int UdpSend(byte[] buffer, int offset, int size, SocketFlags socketFlags)
-        //{
-        //    throw new NotSupportedException();
-        //}
+        public virtual int UdpSend(byte[] buffer, IPEndPoint endPoint) => throw new NotSupportedException();
+#endif
     }
 }
