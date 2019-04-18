@@ -21,7 +21,6 @@ namespace SocksTun.Services
 		private readonly ConfigureProxySocket configureProxySocket;
         private readonly ProxySocket proxy;
         private readonly IPEndPoint localEndPoint;
-        internal volatile bool running = true;
         private readonly ConcurrentDictionary<IPEndPoint, ConcurrentQueue<IPEndPoint>> connectionQueue;
 
         Dictionary<Connection, ProxySocket> relays = new Dictionary<Connection, ProxySocket>();
@@ -53,12 +52,6 @@ namespace SocksTun.Services
 
             client.BeginReceive(ReceiveCallback, null);
             proxy.UdpBeginReceive(UdpReceiveCallback, null);
-
-            while (running)
-            {
-                Thread.Sleep(0);
-            }
-			client.Close();
 		}
 
         private bool trackConnection(Connection connection, IPEndPoint remoteEndPoint, out IPEndPoint targetEndPoint)
@@ -81,7 +74,7 @@ namespace SocksTun.Services
                     connectionQueue.TryAdd(requestedEndPoint, queue);
                 }
                 queue.Enqueue(remoteEndPoint);
-
+                debug.Log(1, logMessage);
                 return true;
             }
             else
@@ -108,7 +101,7 @@ namespace SocksTun.Services
                         return false;
                     }
 
-                    var logMessage = string.Format($"remapping {remoteEndPoint} connection to {targetEndPoint}");
+                    var logMessage = string.Format($"UDP remapping {remoteEndPoint} connection to {targetEndPoint}");
                     debug.Log(1, logMessage);
                     return true;
                 }

@@ -43,7 +43,6 @@ namespace SocksTun.Services
 
         public void Stop()
 		{
-            connection.running = false;
             // TODO: This should close established connections
         }
 
