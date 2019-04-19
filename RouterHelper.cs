@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace SocksTun
 {
@@ -158,7 +159,6 @@ namespace SocksTun
 
             var mask = link.GetIPProperties().UnicastAddresses.Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork).First().IPv4Mask;
             var address = link.GetIPProperties().UnicastAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).First();
-            var gateway = link.GetIPProperties().GatewayAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).First();
 
             var localDest = new IPAddress(mask.GetAddressBytes().Zip(address.GetAddressBytes(), (a, b) => (byte)(a & b)).ToArray());
             var ifidx = link.GetIPProperties().GetIPv4Properties().Index;
@@ -167,10 +167,24 @@ namespace SocksTun
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = specifiedGateway.ToString();
 
-            DeleteRoute(anyIp, anyIp, gateway.ToString(), 1, ifidx);
+            do
+            {
+                link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
+                ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                ni.OperationalStatus == OperationalStatus.Up &&
+                new Guid(ni.Id) == guid).First();
+                var gateway = link.GetIPProperties().GatewayAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+                if (gateway != null)
+                {
+                    DeleteRoute(anyIp, anyIp, gateway.ToString(), 1, ifidx);
+                    break;
+                }
+                Thread.Sleep(100);
+            } while (true);
+
             AddRoute(anyIp, anyIp, gatewayStr, 1, ifidx);
 
-            SetRoute(localDest.ToString(), mask.ToString(), gatewayStr, 1, ifidx);
+            //SetRoute(localDest.ToString(), mask.ToString(), gatewayStr, 1, ifidx);
         }
 
         public static string GetExternalIp()
