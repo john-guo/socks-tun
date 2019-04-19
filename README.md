@@ -18,9 +18,8 @@ TODO list
 ~~把windows设置成路由模式，可以让其他设备通过该工具走socks代理。~~
 暂时添加了一个脚本iprouter.bat来把当前系统设置成路由，需要管理员运行并重启。
 
-出一个整合包，把tap-windows一起整合进来，方便安装使用。
-
-
+~~出一个整合包，把tap-windows一起整合进来，方便安装使用。~~
+整合包下载页面 https://github.com/john-guo/socks-tun/releases
 
 
 
