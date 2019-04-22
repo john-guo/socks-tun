@@ -143,11 +143,18 @@ namespace SocksTun
             SetRoute(externalIp, noneIp, gatewayStr, 1, ifidx);
             SetRoute(anyIp, anyIp, gatewayStr, 99, ifidx, false);
 
+            //setup dns
             foreach (var d in dns)
             {
                 SetRoute(d.ToString(), noneIp, gatewayStr, 1, ifidx);
             }
 
+            //setup proxy
+            var proxyAddr = IPAddress.Parse(Settings.Default.ProxyAddress);
+            if (!IPAddress.IsLoopback(proxyAddr))
+            {
+                SetRoute(Settings.Default.ProxyAddress, noneIp, gatewayStr, 1, ifidx);
+            }
         }
 
         public static void SetupTapGateway(Guid guid, IPAddress specifiedGateway)
