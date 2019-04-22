@@ -421,11 +421,20 @@ namespace Org.Mentalis.Network.ProxySocket {
 		private int m_RemotePort;
 
 #if USEUDP
-        public virtual IAsyncResult UdpBeginReceive(AsyncCallback callback, object state) => socksHandler.UdpBeginReceive(callback, state);
 
-        public virtual byte[] UdpEndReceive(IAsyncResult ar, ref IPEndPoint ep) => socksHandler.UdpEndReceive(ar, ref ep);
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            socksHandler.Close();
+        }
+
+        public IAsyncResult UdpBeginReceive(AsyncCallback callback, object state) => socksHandler.UdpBeginReceive(callback, state);
+
+        public byte[] UdpEndReceive(IAsyncResult ar, ref IPEndPoint ep) => socksHandler.UdpEndReceive(ar, ref ep);
 
         public int UdpSend(byte[] buffer, IPEndPoint ep) => socksHandler.UdpSend(buffer, ep);
+
+        public IPEndPoint UdpEndPoint => socksHandler.UdpEndPoint;
 #endif
     }
 }

@@ -207,6 +207,12 @@ namespace Org.Mentalis.Network.ProxySocket {
         public virtual byte[] UdpEndReceive(IAsyncResult ar, ref IPEndPoint ep) => throw new NotSupportedException();
 
         public virtual int UdpSend(byte[] buffer, IPEndPoint endPoint) => throw new NotSupportedException();
+
+        public virtual void Close()
+        {
+        }
+
+        public virtual IPEndPoint UdpEndPoint => throw new NotSupportedException();
 #endif
     }
 }

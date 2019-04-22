@@ -69,7 +69,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <exception cref="ArgumentNullException"><c>server</c> -or- <c>user</c> -or- <c>pass</c> is null.</exception>
 		public Socks5UdpHandler(Socket server, string user, string pass) : base(server, user) {
 			Password = pass;
-            udpClient = new UdpClient(Settings.Default.SocksPort + 1);
+            udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
             localPort = ((IPEndPoint)udpClient.Client.LocalEndPoint).Port;
         }
         /// <summary>
@@ -499,8 +499,17 @@ namespace Org.Mentalis.Network.ProxySocket {
             data[3] = 1;
             System.Buffer.BlockCopy(ep.Address.GetAddressBytes(), 0, data, 4, 4);
             System.Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)ep.Port)), 0, data, 8, 2);
+            System.Buffer.BlockCopy(buffer, 0, data, 10, buffer.Length);
             return udpClient.Send(data, data.Length);
         }
+
+        public override void Close()
+        {
+            udpClient.Close();
+        }
+
+        public override IPEndPoint UdpEndPoint => (IPEndPoint)udpClient.Client.LocalEndPoint;
+
     }
 
 

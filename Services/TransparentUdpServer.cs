@@ -50,9 +50,10 @@ namespace SocksTun.Services
 		{
 			// TODO: Make this configurable
 			proxySocket.ProxyType = ProxyTypes.Socks5Udp;
-			proxySocket.ProxyEndPoint = new IPEndPoint(IPAddress.Loopback, 1080); //requestedEndPoint.Port == 443 ? 8000 : 1080);
-		}
-	}
+            var address = IPAddress.Parse(Settings.Default.ProxyAddress);
+            proxySocket.ProxyEndPoint = new IPEndPoint(address, Settings.Default.ProxyPort);
+        }
+    }
 }
 
 #endif

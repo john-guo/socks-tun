@@ -121,5 +121,32 @@ namespace SocksTun.Properties {
                 return ((string)(this["AdapterName"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("127.0.0.1")]
+        public string ProxyAddress {
+            get {
+                return ((string)(this["ProxyAddress"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1080")]
+        public int ProxyPort {
+            get {
+                return ((int)(this["ProxyPort"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
+        public int UDPTimeoutSeconds {
+            get {
+                return ((int)(this["UDPTimeoutSeconds"]));
+            }
+        }
     }
 }
