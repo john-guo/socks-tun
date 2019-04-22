@@ -170,20 +170,20 @@ namespace SocksTun
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = specifiedGateway.ToString();
 
-            do
-            {
-                link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
-                ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                ni.OperationalStatus == OperationalStatus.Up &&
-                new Guid(ni.Id) == guid).First();
-                var gateway = link.GetIPProperties().GatewayAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
-                if (gateway != null)
-                {
-                    DeleteRoute(anyIp, anyIp, gateway.ToString(), 1, ifidx);
-                    break;
-                }
-                Thread.Sleep(100);
-            } while (true);
+            //do
+            //{
+            //    link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
+            //    ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+            //    ni.OperationalStatus == OperationalStatus.Up &&
+            //    new Guid(ni.Id) == guid).First();
+            //    var gateway = link.GetIPProperties().GatewayAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+            //    if (gateway != null)
+            //    {
+            //        DeleteRoute(anyIp, anyIp, gateway.ToString(), 1, ifidx);
+            //        break;
+            //    }
+            //    Thread.Sleep(100);
+            //} while (true);
 
             AddRoute(anyIp, anyIp, gatewayStr, 1, ifidx);
         }

@@ -57,14 +57,14 @@ namespace SocksTun.Services
             var dhcpLeaseTime = Settings.Default.DHCPLeaseTime;
             tunTapDevice.ConfigDhcpMasq(localIP, adapterNetmask, dhcpServerAddr, dhcpLeaseTime);
 
-			tunTapDevice.ConfigDhcpSetOptions(
-				new DhcpOption.Routers(
-                    dhcpServerAddr
-                ),
-				new DhcpOption.VendorOptions(
-					new DhcpVendorOption.NetBIOSOverTCP(2)
-				)
-			);
+            //tunTapDevice.ConfigDhcpSetOptions(
+            //    new DhcpOption.Routers(
+            //        dhcpServerAddr
+            //    ),
+            //    new DhcpOption.VendorOptions(
+            //        new DhcpVendorOption.NetBIOSOverTCP(2)
+            //    )
+            //);
 
             RouterHelper.SetupTapGateway(tunTapDevice.Guid, localIP);
 

@@ -45,6 +45,8 @@ using System.Text;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
 
+#pragma warning disable CS0649
+
 namespace SocksTun
 {
 	public class TunTapDevice
