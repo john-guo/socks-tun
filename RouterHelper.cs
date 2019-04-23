@@ -1,7 +1,9 @@
-﻿using Org.Mentalis.Network.ProxySocket;
+﻿using IpHlpApidotnet;
+using Org.Mentalis.Network.ProxySocket;
 using SocksTun.Properties;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -117,15 +119,39 @@ namespace SocksTun
             }
         }
 
+        private static NetworkInterface GetDefaultGatewayInterface()
+        {
+            return NetworkInterface
+                .GetAllNetworkInterfaces()
+                .Where(n => n.OperationalStatus == OperationalStatus.Up)
+                .Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .Where(n => n.GetIPProperties()?.GatewayAddresses.Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork) == true)
+                .FirstOrDefault();
+        }
 
-        public static void SetupDefaultGateway(string name)
+        private static NetworkInterface GetBestNetworkInterface(IPAddress destinationAddress)
+        {
+            uint destaddr = BitConverter.ToUInt32(destinationAddress.GetAddressBytes(), 0);
+
+            int result = IPHlpAPI32Wrapper.GetBestInterface(destaddr, out uint interfaceIndex);
+            if (result != 0)
+                throw new Win32Exception(result);
+
+            return NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.GetIPProperties().GetIPv4Properties()?.Index == interfaceIndex)
+                .Where(ni => ni.GetIPProperties().GatewayAddresses.Any())
+                .FirstOrDefault();
+        }
+
+        public static void SetupDefaultGateway()
         {
             string externalIp = GetExternalIp();
 
-            var link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
-                ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                ni.OperationalStatus == OperationalStatus.Up &&
-                ni.Name == name).First();
+            var link = GetBestNetworkInterface(IPAddress.Parse(externalIp)) ?? GetDefaultGatewayInterface();
+            if (link == null)
+            {
+                throw new Exception("No Gateway");
+            }
 
             var mask = link.GetIPProperties().UnicastAddresses.Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork).First().IPv4Mask;
             var address = link.GetIPProperties().UnicastAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).First();
@@ -192,7 +218,7 @@ namespace SocksTun
         {
             ProxySocket proxySocket = new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             proxySocket.ProxyType = ProxyTypes.Socks5;
-            proxySocket.ProxyEndPoint = new IPEndPoint(IPAddress.Loopback, 1080); //requestedEndPoint.Port == 443 ? 8000 : 1080);
+            proxySocket.ProxyEndPoint = new IPEndPoint(IPAddress.Parse(Settings.Default.ProxyAddress), Settings.Default.ProxyPort);
             proxySocket.Connect("api.ipify.org", 80);
             proxySocket.Send(Encoding.ASCII.GetBytes("GET / HTTP/1.1\r\nHost: api.ipify.org\r\n\r\n"));
             int recv = 0;

@@ -20,7 +20,7 @@ namespace SocksTun
 		{
             Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
 
-            RouterHelper.SetupDefaultGateway(Settings.Default.AdapterName);
+            RouterHelper.SetupDefaultGateway();
 
             (new SocksTunService()).Run(args);
 

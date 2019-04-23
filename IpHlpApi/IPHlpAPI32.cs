@@ -241,6 +241,9 @@ namespace IpHlpApidotnet
 			}
 			return "none";
 		}
-	}
+
+        [DllImport("iphlpapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern int GetBestInterface(UInt32 destAddr, out UInt32 bestIfIndex);
+    }
 }
 

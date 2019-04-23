@@ -43,7 +43,7 @@ namespace SocksTun.Services
 
         public void Stop()
 		{
-            // TODO: This should close established connections
+            connection.Stop();
         }
 
 		private static void ConfigureSocksProxy(ProxySocket proxySocket, IPEndPoint requestedEndPoint)

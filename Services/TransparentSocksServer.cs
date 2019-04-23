@@ -43,8 +43,9 @@ namespace SocksTun.Services
 
 		public void Stop()
 		{
-			// TODO: This should close established connections
-		}
+            // TODO: This should close established connections
+            transparentSocksServer.Stop();
+        }
 
 		private void NewTransparentSocksConnection(IAsyncResult ar)
 		{
@@ -52,13 +53,18 @@ namespace SocksTun.Services
 			try
 			{
 				client = transparentSocksServer.EndAcceptSocket(ar);
-			}
-			catch (SystemException)
+            }
+            catch (SystemException)
 			{
 			}
-			transparentSocksServer.BeginAcceptSocket(NewTransparentSocksConnection, null);
 
-			if (client == null) return;
+            try
+            {
+                transparentSocksServer.BeginAcceptSocket(NewTransparentSocksConnection, null);
+            }
+            catch { }
+
+            if (client == null) return;
 			var connection = new TransparentSocksConnection(client, debug, connectionTracker, ConfigureSocksProxy);
 			connection.Process();
 		}
