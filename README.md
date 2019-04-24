@@ -37,7 +37,7 @@ iprouter.bat以及iprouter_disable.bat是开启关闭本机IP转发功能，开�
 
     RemoteNetmask Tap目标子网掩码，默认0.0.0.0表示所有网络
 
-    DHCPServer Tap上的DHCP服务器地址，DHCP服务是为了有更好的兼容性
+    DHCPServer Tap上的DHCP服务器地址，使用DHCP方式设定Tap本地ip地址，以后可能会使用静态IP分配方式取代这些DHCP配置。
 
     DHCPNetmask Tap的本地子网掩码，此掩码必须能让DHCPServer和IPAddress在同一个网段内
 
