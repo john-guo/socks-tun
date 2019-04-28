@@ -142,7 +142,7 @@ namespace SocksTun
                 DeleteRoute(route.destination, route.mask, route.nexthop, route.metric, route.interfaceIndex);
             }
 
-            if (defaultDNS != null && defaultDNS.Length > 0)
+            if (defaultDNS != null)
             {
                 SetDns(defaultInterfaceIndex, defaultDNS);
             }
