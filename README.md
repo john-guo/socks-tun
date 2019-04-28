@@ -53,7 +53,7 @@ iprouter.bat以及iprouter_disable.bat是开启关闭本机IP转发功能，开�
 	
     Rules 规则文件rule.txt，不填使用默认规则0.0.0.0/0
 
-#### 规则说明
+#### 规则文件说明
     
     每行为一条ip段，表示这段ip通过代理，每行第一个字符如果是-则表示该段ip是直连。
 
