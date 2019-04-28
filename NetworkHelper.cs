@@ -103,7 +103,7 @@ namespace SocksTun
             var num = int.Parse(slice[1]);
             var cap = 32 - num;
 
-            var mask = cap == 0 ? 0 : ~((uint)(1 << cap) - 1);
+            var mask = cap == 0 ? uint.MaxValue : num == 0 ? 0 : ~((uint)(1 << cap) - 1);
             var maskaddr = new IPAddress(mask).ToString();
 
             return SetRoute(address, maskaddr, gateway, metric, interfaceIndex, needClean);
