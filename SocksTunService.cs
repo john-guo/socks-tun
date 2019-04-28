@@ -10,11 +10,10 @@ using SocksTun.Services;
 
 namespace SocksTun
 {
-	public partial class SocksTunService : ServiceBase
+	public class SocksTunService
 	{
 		public SocksTunService()
 		{
-			InitializeComponent();
 			debug.LogLevel = 2;
 		}
 
@@ -37,16 +36,14 @@ namespace SocksTun
 		private readonly DebugWriter debug = new DebugWriter();
 		private readonly IDictionary<string, IService> services = new Dictionary<string, IService>();
 
-		protected override void OnStart(string[] args)
+		protected void OnStart(string[] args)
 		{
 			services["connectionTracker"] = new ConnectionTracker(debug, services);
 			services["natter"] = new Natter(debug, services);
-			services["logServer"] = new LogServer(debug, services);
 			services["transparentSocksServer"] = new TransparentSocksServer(debug, services);
 
             services["connectionTracker"].Start();
 			services["natter"].Start();
-			services["logServer"].Start();
 			services["transparentSocksServer"].Start();
 
 #if USEUDP
@@ -56,14 +53,13 @@ namespace SocksTun
 
         }
 
-        protected override void OnStop()
+        protected void OnStop()
 		{
 #if USEUDP
             services["transparentUdpServer"].Stop();
 #endif
 
             services["transparentSocksServer"].Stop();
-			services["logServer"].Stop();
 			services["natter"].Stop();
 			services["connectionTracker"].Stop();
 		}

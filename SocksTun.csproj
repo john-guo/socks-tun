@@ -62,7 +62,7 @@
   <ItemGroup>
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="ProxySocket\Socks5UdpHandler.cs" />
-    <Compile Include="RouterHelper.cs" />
+    <Compile Include="NetworkHelper.cs" />
     <Compile Include="Services\ConnectionTracker.cs" />
     <Compile Include="DebugWriter.cs" />
     <Compile Include="IpHlpApi\IPHlpAPI32.cs" />
@@ -70,14 +70,7 @@
     <Compile Include="IpHlpApi\TCPUDPConnections.cs" />
     <Compile Include="IpHlpApi\Utils.cs" />
     <Compile Include="Services\IService.cs" />
-    <Compile Include="Services\LogConnection.cs" />
     <Compile Include="Services\Natter.cs" />
-    <Compile Include="ProjectInstaller.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="ProjectInstaller.Designer.cs">
-      <DependentUpon>ProjectInstaller.cs</DependentUpon>
-    </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -93,30 +86,16 @@
     <Compile Include="ProxySocket\Socks5Handler.cs" />
     <Compile Include="ProxySocket\SocksHandler.cs" />
     <Compile Include="ProxySocket\TestApp.cs" />
-    <Compile Include="Services\LogServer.cs" />
     <Compile Include="Services\TransparentUdpConnection.cs" />
     <Compile Include="Services\TransparentUdpServer.cs" />
     <Compile Include="Services\TransparentSocksServer.cs" />
     <Compile Include="SocketPump.cs" />
-    <Compile Include="SocksTunService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="SocksTunService.Designer.cs">
-      <DependentUpon>SocksTunService.cs</DependentUpon>
-    </Compile>
+    <Compile Include="SocksTunService.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\TransparentSocksConnection.cs" />
     <Compile Include="TunTapDevice.cs" />
     <Compile Include="Win32Api.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="ProjectInstaller.resx">
-      <DependentUpon>ProjectInstaller.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SocksTunService.resx">
-      <DependentUpon>SocksTunService.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -130,6 +109,11 @@
     <None Include="scripts\addrouter.bat" />
     <None Include="scripts\iprouter_disable.bat" />
     <None Include="scripts\iprouter.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="rules.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

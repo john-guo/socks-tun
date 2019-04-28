@@ -35,18 +35,9 @@ namespace SocksTun.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("255.255.255.0")]
-        public string DHCPNetmask {
+        public string SubnetMask {
             get {
-                return ((string)(this["DHCPNetmask"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10.3.0.254")]
-        public string DHCPServer {
-            get {
-                return ((string)(this["DHCPServer"]));
+                return ((string)(this["SubnetMask"]));
             }
         }
         
@@ -74,33 +65,6 @@ namespace SocksTun.Properties {
         public int SocksPort {
             get {
                 return ((int)(this["SocksPort"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("58000")]
-        public int LogPort {
-            get {
-                return ((int)(this["LogPort"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("31536000")]
-        public int DHCPLeaseTime {
-            get {
-                return ((int)(this["DHCPLeaseTime"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Services {
-            get {
-                return ((string)(this["Services"]));
             }
         }
         
@@ -137,6 +101,24 @@ namespace SocksTun.Properties {
         public int UDPTimeoutSeconds {
             get {
                 return ((int)(this["UDPTimeoutSeconds"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8.8.8.8")]
+        public string DNSServer {
+            get {
+                return ((string)(this["DNSServer"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rules.txt")]
+        public string Rules {
+            get {
+                return ((string)(this["Rules"]));
             }
         }
     }

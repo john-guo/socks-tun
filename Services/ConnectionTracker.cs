@@ -59,13 +59,13 @@ namespace SocksTun.Services
 		public TCPUDPConnection GetTCPConnection(EndPoint localEndPoint, EndPoint remoteEndPoint)
 		{
 			tcpUdpConnections.Refresh();
-			return tcpUdpConnections.SingleOrDefault(c => c.Local.Equals(localEndPoint) && c.Remote.Equals(remoteEndPoint));
+			return tcpUdpConnections.SingleOrDefault(c => (c.Local?.Equals(localEndPoint) ?? false) && (c.Remote?.Equals(remoteEndPoint) ?? false));
 		}
 
         public TCPUDPConnection GetUDPConnection(EndPoint localEndPoint, EndPoint remoteEndPoint)
         {
             udpConnections.Refresh();
-            return udpConnections.SingleOrDefault(c => c.Local.Equals(localEndPoint) && c.Remote.Equals(remoteEndPoint));
+            return udpConnections.SingleOrDefault(c => (c.Local?.Equals(localEndPoint) ?? false) && (c.Remote?.Equals(remoteEndPoint) ?? false));
         }
 
         public Connection this[Connection connection]

@@ -16,8 +16,15 @@ using System.Threading;
 
 namespace SocksTun
 {
-    public static class RouterHelper
+    public static class NetworkHelper
     {
+        public enum MetricIndex
+        {
+            DIRECT = 1,
+            PROXY = 50,
+            LAST = 999,
+        }
+
         private enum RouteOperation
         {
             add,
@@ -31,7 +38,7 @@ namespace SocksTun
                 StartInfo = new ProcessStartInfo("route", $"{op} {destAddr} mask {subMask} {gateway} METRIC {metric} IF {interfaceIndex}")
                 {
                     CreateNoWindow = true,
-                    UseShellExecute = true,
+                    UseShellExecute = false,
                     WindowStyle = ProcessWindowStyle.Hidden,
                 }
             };
@@ -60,6 +67,9 @@ namespace SocksTun
         }
 
         private static List<RouteInfo> extraRoutes = new List<RouteInfo>();
+        private static int defaultInterfaceIndex;
+        private static string defaultGateway;
+        private static string[] defaultDNS;
 
         public static List<RouteInfo> GetRouteTable()
         {
@@ -84,6 +94,19 @@ namespace SocksTun
             }
 
             return table;
+        }
+
+        public static bool SetRoute(string ipAddresses, string gateway, int metric, int interfaceIndex, bool needClean = true)
+        {
+            var slice = ipAddresses.Split('/');
+            var address = slice[0];
+            var num = int.Parse(slice[1]);
+            var cap = 32 - num;
+
+            var mask = cap == 0 ? 0 : ~((uint)(1 << cap) - 1);
+            var maskaddr = new IPAddress(mask).ToString();
+
+            return SetRoute(address, maskaddr, gateway, metric, interfaceIndex, needClean);
         }
 
         public static bool SetRoute(string destAddr, string subMask, string gateway, int metric, int interfaceIndex, bool needClean = true)
@@ -116,6 +139,11 @@ namespace SocksTun
             foreach (var route in extraRoutes)
             {
                 DeleteRoute(route.destination, route.mask, route.nexthop, route.metric, route.interfaceIndex);
+            }
+
+            if (defaultDNS != null && defaultDNS.Length > 0)
+            {
+                SetDns(defaultInterfaceIndex, defaultDNS);
             }
         }
 
@@ -161,25 +189,37 @@ namespace SocksTun
             var localDest = new IPAddress(mask.GetAddressBytes().Zip(address.GetAddressBytes(), (a, b) => (byte)(a & b)).ToArray());
             var ifidx = link.GetIPProperties().GetIPv4Properties().Index;
 
+            defaultInterfaceIndex = ifidx;
+
             var anyIp = IPAddress.Any.ToString();
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = gateway.ToString();
 
-            SetRoute(localDest.ToString(), mask.ToString(), gatewayStr, 1, ifidx);
-            SetRoute(externalIp, noneIp, gatewayStr, 1, ifidx);
-            SetRoute(anyIp, anyIp, gatewayStr, 99, ifidx, false);
+            defaultGateway = gatewayStr;
 
-            //setup dns
-            foreach (var d in dns)
+            SetRoute(localDest.ToString(), mask.ToString(), gatewayStr, (int)MetricIndex.DIRECT, ifidx);
+            SetRoute(externalIp, noneIp, gatewayStr, (int)MetricIndex.DIRECT, ifidx);
+            SetRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.LAST, ifidx, false);
+
+            if (string.IsNullOrWhiteSpace(Settings.Default.DNSServer))
             {
-                SetRoute(d.ToString(), noneIp, gatewayStr, 1, ifidx);
+                //setup dns
+                foreach (var d in dns)
+                {
+                    SetRoute(d.ToString(), noneIp, gatewayStr, (int)MetricIndex.DIRECT, ifidx);
+                }
+            }
+            else
+            {
+                defaultDNS = GetDns(ifidx);
+                SetDns(ifidx, new[] { Settings.Default.DNSServer });
             }
 
             //setup proxy
             var proxyAddr = IPAddress.Parse(Settings.Default.ProxyAddress);
             if (!IPAddress.IsLoopback(proxyAddr))
             {
-                SetRoute(Settings.Default.ProxyAddress, noneIp, gatewayStr, 1, ifidx);
+                SetRoute(Settings.Default.ProxyAddress, noneIp, gatewayStr, (int)MetricIndex.DIRECT, ifidx);
             }
         }
 
@@ -196,22 +236,33 @@ namespace SocksTun
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = specifiedGateway.ToString();
 
-            //do
-            //{
-            //    link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
-            //    ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-            //    ni.OperationalStatus == OperationalStatus.Up &&
-            //    new Guid(ni.Id) == guid).First();
-            //    var gateway = link.GetIPProperties().GatewayAddresses.Select(ip => ip.Address).Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
-            //    if (gateway != null)
-            //    {
-            //        DeleteRoute(anyIp, anyIp, gateway.ToString(), 1, ifidx);
-            //        break;
-            //    }
-            //    Thread.Sleep(100);
-            //} while (true);
+            if (string.IsNullOrWhiteSpace(Settings.Default.Rules))
+            {
+                AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
+            }
+            else
+            {
+                var rules = File.ReadAllLines(Settings.Default.Rules);
+                foreach (var rule in rules)
+                {
+                    if (string.IsNullOrWhiteSpace(rule))
+                        continue;
 
-            AddRoute(anyIp, anyIp, gatewayStr, 1, ifidx);
+                    var addr = rule;
+                    var gateway = gatewayStr;
+                    int metric = (int)MetricIndex.PROXY;
+                    int idx = ifidx;
+                    if (rule[0] == '-')
+                    {
+                        gateway = defaultGateway;
+                        metric = (int)MetricIndex.DIRECT;
+                        idx = defaultInterfaceIndex;
+                        addr = rule.Substring(1);
+                    }
+
+                    SetRoute(addr, gateway, metric, idx);
+                }
+            }
         }
 
         public static string GetExternalIp()
@@ -238,6 +289,51 @@ namespace SocksTun
                 ip = reader.ReadLine();
             }
             return ip;
+        }
+
+        private static ManagementObject FindNetworkAdapterConfiguration(string id)
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\CIMV2",
+                    $"SELECT * FROM Win32_NetworkAdapterConfiguration Where SettingID='{id}'");
+            return searcher.Get().OfType<ManagementObject>().FirstOrDefault();
+        }
+
+        private static ManagementObject FindNetworkAdapterConfiguration(int interfaceIndex)
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\CIMV2",
+                    $"SELECT * FROM Win32_NetworkAdapterConfiguration Where InterfaceIndex ={interfaceIndex}");
+            return searcher.Get().OfType<ManagementObject>().FirstOrDefault();
+        }
+
+        private static string[] GetDns(int interfaceIndex)
+        {
+            var mo = FindNetworkAdapterConfiguration(interfaceIndex);
+            return (string[])mo["DNSServerSearchOrder"];
+        }
+        private static void SetDns(int interfaceIndex, string[] dns)
+        {
+            var mo = FindNetworkAdapterConfiguration(interfaceIndex);
+
+            var parameters = mo.GetMethodParameters("SetDNSServerSearchOrder");
+            parameters["DNSServerSearchOrder"] = dns;
+            mo.InvokeMethod("SetDNSServerSearchOrder", parameters, null);
+        }
+
+        public static void SetStaticIPAddress(string id, string ip, string mask, string dns)
+        {
+            var mo = FindNetworkAdapterConfiguration(id);
+
+            if (!(bool)mo["IPEnabled"])
+                return;
+
+            var parameters = mo.GetMethodParameters("EnableStatic");
+            parameters["IPAddress"] = new[] { ip };
+            parameters["SubnetMask"] = new[] { mask };
+            mo.InvokeMethod("EnableStatic", parameters, null);
+
+            parameters = mo.GetMethodParameters("SetDNSServerSearchOrder");
+            parameters["DNSServerSearchOrder"] = new[] { dns };
+            mo.InvokeMethod("SetDNSServerSearchOrder", parameters, null);
         }
     }
 }

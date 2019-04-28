@@ -52,21 +52,14 @@ namespace SocksTun.Services
 			var remoteNetmask = IPAddress.Parse(Settings.Default.RemoteNetmask);
 			tunTapDevice.ConfigTun(localIP, remoteNetwork, remoteNetmask);
 
-            var adapterNetmask = IPAddress.Parse(Settings.Default.DHCPNetmask);
-            var dhcpServerAddr = IPAddress.Parse(Settings.Default.DHCPServer);
-            var dhcpLeaseTime = Settings.Default.DHCPLeaseTime;
-            tunTapDevice.ConfigDhcpMasq(localIP, adapterNetmask, dhcpServerAddr, dhcpLeaseTime);
+            NetworkHelper.SetStaticIPAddress(
+                tunTapDevice.Guid.ToString("B"), 
+                localIP.ToString(),
+                Settings.Default.SubnetMask, 
+                Settings.Default.DNSServer
+            );
 
-            //tunTapDevice.ConfigDhcpSetOptions(
-            //    new DhcpOption.Routers(
-            //        dhcpServerAddr
-            //    ),
-            //    new DhcpOption.VendorOptions(
-            //        new DhcpVendorOption.NetBIOSOverTCP(2)
-            //    )
-            //);
-
-            RouterHelper.SetupTapGateway(tunTapDevice.Guid, localIP);
+            NetworkHelper.SetupTapGateway(tunTapDevice.Guid, localIP);
 
             BeginRun(NatterStopped, null);
 		}
