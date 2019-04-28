@@ -189,10 +189,11 @@ namespace SocksTun.Services
             // TODO: Make this configurable
             var address = destinationEndPoint.Address.GetAddressBytes().Zip(sourceEndPoint.Address.GetAddressBytes(), (a, b) => (byte)(a ^ b)).ToArray();
             var srcAddr = new IPAddress(address);
-
             var expectSourceEndPoint = new IPEndPoint(srcAddr, sourceEndPoint.Port);
+
             //var expectSourceEndPoint = new IPEndPoint(destinationEndPoint.Address, sourceEndPoint.Port);
             //var expectDestinationEndPoint = new IPEndPoint(sourceEndPoint.Address, transparentSocksServer.Port);
+
             //var expectSourceEndPoint = new IPEndPoint(sourceEndPoint.Address, sourceEndPoint.Port);
             //var target = IPAddress.Parse("192.168.1.91");
             var target = transparentSocksServer.Address;

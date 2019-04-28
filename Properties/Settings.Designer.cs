@@ -112,14 +112,5 @@ namespace SocksTun.Properties {
                 return ((string)(this["DNSServer"]));
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("rules.txt")]
-        public string Rules {
-            get {
-                return ((string)(this["Rules"]));
-            }
-        }
     }
 }

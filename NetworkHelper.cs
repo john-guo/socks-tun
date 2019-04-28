@@ -35,7 +35,7 @@ namespace SocksTun
         {
             var routerCmd = new Process
             {
-                StartInfo = new ProcessStartInfo("route", $"{op} {destAddr} mask {subMask} {gateway} METRIC {metric} IF {interfaceIndex}")
+                StartInfo = new ProcessStartInfo("route", $"{op} {destAddr} mask {subMask} {(string.IsNullOrWhiteSpace(gateway) ? string.Empty : gateway)}  {(metric == 0? string.Empty : $"METRIC {metric}")} {(interfaceIndex == 0 ? string.Empty : $"IF {interfaceIndex}")}")
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -104,6 +104,7 @@ namespace SocksTun
             var cap = 32 - num;
 
             var mask = num == 0 ? 0 : ~((uint)(1 << cap) - 1);
+            mask = (uint)IPAddress.HostToNetworkOrder((int)mask);
             var maskaddr = new IPAddress(mask).ToString();
 
             return SetRoute(address, maskaddr, gateway, metric, interfaceIndex, needClean);
@@ -197,6 +198,8 @@ namespace SocksTun
 
             defaultGateway = gatewayStr;
 
+            DeleteRoute(anyIp, anyIp, null, 0, 0);
+
             SetRoute(localDest.ToString(), mask.ToString(), gatewayStr, (int)MetricIndex.DIRECT, ifidx);
             SetRoute(externalIp, noneIp, gatewayStr, (int)MetricIndex.DIRECT, ifidx);
             SetRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.LAST, ifidx, false);
@@ -236,6 +239,9 @@ namespace SocksTun
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = specifiedGateway.ToString();
 
+            AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
+
+            /*
             if (string.IsNullOrWhiteSpace(Settings.Default.Rules))
             {
                 AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
@@ -262,7 +268,13 @@ namespace SocksTun
 
                     SetRoute(addr, gateway, metric, idx);
                 }
+
+                if (!string.IsNullOrWhiteSpace(Settings.Default.DNSServer))
+                {
+                    SetRoute(Settings.Default.DNSServer, IPAddress.None.ToString(), gatewayStr, (int)MetricIndex.PROXY, ifidx);
+                }
             }
+            */
         }
 
         public static string GetExternalIp()

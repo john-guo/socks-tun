@@ -32,8 +32,5 @@
     <Setting Name="DNSServer" Type="System.String" Scope="Application">
       <Value Profile="(Default)">8.8.8.8</Value>
     </Setting>
-    <Setting Name="Rules" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">rules.txt</Value>
-    </Setting>
   </Settings>
 </SettingsFile>
