@@ -112,5 +112,32 @@ namespace SocksTun.Properties {
                 return ((string)(this["DNSServer"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rules.txt")]
+        public string Rules {
+            get {
+                return ((string)(this["Rules"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10.0.0.0")]
+        public string PrivateAddress {
+            get {
+                return ((string)(this["PrivateAddress"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("255.0.0.0")]
+        public string PrivateMask {
+            get {
+                return ((string)(this["PrivateMask"]));
+            }
+        }
     }
 }

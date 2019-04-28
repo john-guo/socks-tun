@@ -226,7 +226,7 @@ namespace SocksTun
             }
         }
 
-        public static void SetupTapGateway(Guid guid, IPAddress specifiedGateway)
+        public static void SetupTapGateway(Guid guid)
         {
             var link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
                 ni.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
@@ -237,11 +237,13 @@ namespace SocksTun
 
             var anyIp = IPAddress.Any.ToString();
             var noneIp = IPAddress.None.ToString();
-            var gatewayStr = specifiedGateway.ToString();
+            var gatewayStr = anyIp;
 
-            AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
+            SetRoute(
+                Settings.Default.PrivateAddress,
+                Settings.Default.PrivateMask,
+                gatewayStr, (int)MetricIndex.DIRECT, ifidx);
 
-            /*
             if (string.IsNullOrWhiteSpace(Settings.Default.Rules))
             {
                 AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
@@ -249,8 +251,10 @@ namespace SocksTun
             else
             {
                 var rules = File.ReadAllLines(Settings.Default.Rules);
-                foreach (var rule in rules)
+                var count = 0;
+                foreach (var line in rules)
                 {
+                    var rule = line.Trim();
                     if (string.IsNullOrWhiteSpace(rule))
                         continue;
 
@@ -258,6 +262,9 @@ namespace SocksTun
                     var gateway = gatewayStr;
                     int metric = (int)MetricIndex.PROXY;
                     int idx = ifidx;
+
+                    if (rule[0] == '#')
+                        continue;
                     if (rule[0] == '-')
                     {
                         gateway = defaultGateway;
@@ -266,15 +273,23 @@ namespace SocksTun
                         addr = rule.Substring(1);
                     }
 
+                    count++;
                     SetRoute(addr, gateway, metric, idx);
                 }
 
-                if (!string.IsNullOrWhiteSpace(Settings.Default.DNSServer))
+                if (count > 0)
                 {
-                    SetRoute(Settings.Default.DNSServer, IPAddress.None.ToString(), gatewayStr, (int)MetricIndex.PROXY, ifidx);
+                    if (!string.IsNullOrWhiteSpace(Settings.Default.DNSServer))
+                    {
+                        SetRoute(Settings.Default.DNSServer, IPAddress.None.ToString(), gatewayStr, (int)MetricIndex.PROXY, ifidx);
+                    }
+                }
+                else
+                {
+                    AddRoute(anyIp, anyIp, gatewayStr, (int)MetricIndex.PROXY, ifidx);
                 }
             }
-            */
+
         }
 
         public static string GetExternalIp()

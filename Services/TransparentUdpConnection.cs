@@ -87,7 +87,7 @@ namespace SocksTun.Services
                 {
                     proxies.Where(pair => pair.Value.Expired.TotalSeconds >= Settings.Default.UDPTimeoutSeconds).ToList().ForEach(pair =>
                     {
-                        debug.Log(0, $"UDP disconnected: {pair.Key}");
+                        debug.Log(1, $"UDP disconnected: {pair.Key}");
                         if (proxies.TryRemove(pair.Key, out CountedProxySocket proxy))
                         {
                             proxy.Proxy.Close();

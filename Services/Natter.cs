@@ -24,8 +24,11 @@ namespace SocksTun.Services
 		private ConnectionTracker connectionTracker;
 		private TransparentSocksServer transparentSocksServer;
 		private bool running;
+        private byte[] localIpBytes;
+        private byte[] privateAddressBytes;
+        private byte[] privateMaskBytes;
 
-		public Natter(DebugWriter debug, IDictionary<string, IService> services)
+        public Natter(DebugWriter debug, IDictionary<string, IService> services)
 		{
 			this.debug = debug;
 			this.services = services;
@@ -59,7 +62,11 @@ namespace SocksTun.Services
                 Settings.Default.DNSServer
             );
 
-            NetworkHelper.SetupTapGateway(tunTapDevice.Guid, localIP);
+            localIpBytes = localIP.GetAddressBytes();
+            privateAddressBytes = IPAddress.Parse(Settings.Default.PrivateAddress).GetAddressBytes();
+            privateMaskBytes = IPAddress.Parse(Settings.Default.PrivateMask).GetAddressBytes();
+
+            NetworkHelper.SetupTapGateway(tunTapDevice.Guid);
 
             BeginRun(NatterStopped, null);
 		}
@@ -188,6 +195,14 @@ namespace SocksTun.Services
 		{
             // TODO: Make this configurable
             var address = destinationEndPoint.Address.GetAddressBytes().Zip(sourceEndPoint.Address.GetAddressBytes(), (a, b) => (byte)(a ^ b)).ToArray();
+            address[1] ^= address[0];
+            if (address[1] == localIpBytes[1])
+            {
+                address[1] += 1;
+            }
+            address[2] ^= address[0];
+            address[3] ^= address[0];
+            address[0] = privateAddressBytes[0];
             var srcAddr = new IPAddress(address);
             var expectSourceEndPoint = new IPEndPoint(srcAddr, sourceEndPoint.Port);
 
@@ -237,7 +252,7 @@ namespace SocksTun.Services
 		private AsyncCallback asyncCallback;
 		private NatterAsyncResult asyncResult;
 
-		public IAsyncResult BeginRun(AsyncCallback callback, object state)
+        public IAsyncResult BeginRun(AsyncCallback callback, object state)
 		{
 			backgroundWorker = new System.ComponentModel.BackgroundWorker {WorkerSupportsCancellation = true};
 			backgroundWorker.DoWork += backgroundWorker_DoWork;
