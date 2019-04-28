@@ -1,8 +1,11 @@
 # socks-tun
 
-SocksTun - Using a TUN device to access network resources via a Socks server.  Allows you to socksify outgoing connections by using a TUN device. Similar to SocksCap except it intercepts the TCP/IP data at network layer 3 instead of at network layer 4.
-
 该项目fork自 <https://github.com/normanr/socks-tun> 可以把tap/tun上的tcp/udp数据包重定向到socks代理，对代码稍作修改可以支持最新版tap-windows <https://github.com/OpenVPN/tap-windows6>
+
+原项目英文说明：
+
+>SocksTun - Using a TUN device to access network resources via a Socks server.  Allows you to socksify outgoing connections by using a TUN device. Similar to SocksCap except it intercepts the TCP/IP data at network layer 3 instead of at network layer 4.
+
 
 原理是修改tun上的tcp/ip源目标地址及端口，使数据包重定向到指定的监听端口，这样就让所有走tun的tcp都连接到本地端口，再由程序把数据包转发到socks代理服务器上。
 
