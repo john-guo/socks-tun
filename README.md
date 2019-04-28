@@ -32,8 +32,8 @@ iprouter.bat以及iprouter_disable.bat是开启关闭本机IP转发功能，开�
 ### 配置文件说明
 
     IPAddress Tap的本地IP地址（Tap网关地址）
-
-	SubnetMask 子网掩码
+    
+    SubnetMask 子网掩码
 
     RemoteNetwork Tap目标网络地址，默认为0.0.0.0表示所有网络
 
@@ -49,15 +49,19 @@ iprouter.bat以及iprouter_disable.bat是开启关闭本机IP转发功能，开�
 
     UDPTimeoutSeconds UDP连接超时设定
 	
-	DNSServer DNS服务器名，反污染用，不应填写本地DNS，不填无反污染功能
+    DNSServer DNS服务器名，反污染用，不应填写本地DNS，不填无反污染功能
 	
-	Rules 规则文件rule.txt，不填使用默认规则0.0.0.0/0
+    Rules 规则文件rule.txt，不填使用默认规则0.0.0.0/0
 
 #### 规则说明
-	每行为一条ip段，表示这段ip通过代理，每行第一个字符如果是-则表示该段ip是直连。
-	如
-		0.0.0.0/0 表示所有ip都通过代理
-		-8.8.8.8/32 表示8.8.8.8是直连
+    
+    每行为一条ip段，表示这段ip通过代理，每行第一个字符如果是-则表示该段ip是直连。
+
+    如：
+    
+        0.0.0.0/0 表示所有ip都通过代理
+	
+        -8.8.8.8/32 表示8.8.8.8是直连
 
 ## TODO list
 
