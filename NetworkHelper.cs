@@ -226,6 +226,15 @@ namespace SocksTun
             }
         }
 
+        private static IPAddress GetSubAddress(IPAddress addr, IPAddress mask)
+        {
+            var addrbytes = addr.GetAddressBytes();
+            var maskbytes = mask.GetAddressBytes();
+
+            var subaddr = addrbytes.Aggregate(0, (a, b) => a << 8 | b) & maskbytes.Aggregate(0, (a, b) => a << 8 | b);
+            return new IPAddress(IPAddress.HostToNetworkOrder(subaddr));
+        }
+
         public static void SetupTapGateway(Guid guid)
         {
             var link = NetworkInterface.GetAllNetworkInterfaces().Where(ni =>
@@ -239,9 +248,13 @@ namespace SocksTun
             var noneIp = IPAddress.None.ToString();
             var gatewayStr = anyIp;
 
+            var localIP = IPAddress.Parse(Settings.Default.IPAddress);
+            var mask = IPAddress.Parse(Settings.Default.SubnetMask);
+            var subaddr = GetSubAddress(localIP, mask);
+
             SetRoute(
-                Settings.Default.PrivateAddress,
-                Settings.Default.PrivateMask,
+                subaddr.ToString(),
+                Settings.Default.SubnetMask,
                 gatewayStr, (int)MetricIndex.DIRECT, ifidx);
 
             if (string.IsNullOrWhiteSpace(Settings.Default.Rules))

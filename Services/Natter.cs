@@ -24,9 +24,7 @@ namespace SocksTun.Services
 		private ConnectionTracker connectionTracker;
 		private TransparentSocksServer transparentSocksServer;
 		private bool running;
-        private byte[] localIpBytes;
-        private byte[] privateAddressBytes;
-        private byte[] privateMaskBytes;
+        private IPAddress virtualAddress;
 
         public Natter(DebugWriter debug, IDictionary<string, IService> services)
 		{
@@ -62,9 +60,9 @@ namespace SocksTun.Services
                 Settings.Default.DNSServer
             );
 
-            localIpBytes = localIP.GetAddressBytes();
-            privateAddressBytes = IPAddress.Parse(Settings.Default.PrivateAddress).GetAddressBytes();
-            privateMaskBytes = IPAddress.Parse(Settings.Default.PrivateMask).GetAddressBytes();
+            var localAddrBytes = localIP.GetAddressBytes();
+            localAddrBytes[localAddrBytes.Length - 1] = (byte)((localAddrBytes[localAddrBytes.Length - 1] << 1) % byte.MaxValue);
+            virtualAddress = new IPAddress(localAddrBytes);
 
             NetworkHelper.SetupTapGateway(tunTapDevice.Guid);
 
@@ -193,24 +191,7 @@ namespace SocksTun.Services
 
 		private Connection getExpectedConnection(ProtocolType protocol, IPEndPoint sourceEndPoint, IPEndPoint destinationEndPoint)
 		{
-            // TODO: Make this configurable
-            var address = destinationEndPoint.Address.GetAddressBytes().Zip(sourceEndPoint.Address.GetAddressBytes(), (a, b) => (byte)(a ^ b)).ToArray();
-            address[1] ^= address[0];
-            if (address[1] == localIpBytes[1])
-            {
-                address[1] += 1;
-            }
-            address[2] ^= address[0];
-            address[3] ^= address[0];
-            address[0] = privateAddressBytes[0];
-            var srcAddr = new IPAddress(address);
-            var expectSourceEndPoint = new IPEndPoint(srcAddr, sourceEndPoint.Port);
-
-            //var expectSourceEndPoint = new IPEndPoint(destinationEndPoint.Address, sourceEndPoint.Port);
-            //var expectDestinationEndPoint = new IPEndPoint(sourceEndPoint.Address, transparentSocksServer.Port);
-
-            //var expectSourceEndPoint = new IPEndPoint(sourceEndPoint.Address, sourceEndPoint.Port);
-            //var target = IPAddress.Parse("192.168.1.91");
+            var expectSourceEndPoint = new IPEndPoint(virtualAddress, sourceEndPoint.Port);
             var target = transparentSocksServer.Address;
             var expectDestinationEndPoint = new IPEndPoint(target, transparentSocksServer.Port);
             return new Connection(protocol, expectSourceEndPoint, expectDestinationEndPoint);

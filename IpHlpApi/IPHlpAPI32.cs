@@ -182,9 +182,57 @@ namespace IpHlpApidotnet
 		public int dwProcessId;
 		public string ProcessName;
 	}
-	#endregion
+    #endregion
 
-	public static class IPHlpAPI32Wrapper
+    public enum ForwardType
+    {
+        Other = 1,
+        Invalid = 2,
+        Direct = 3,
+        Indirect = 4
+    }
+
+    public enum ForwardProtocol
+    {
+        Other = 1,
+        Local = 2,
+        NetMGMT = 3,
+        ICMP = 4,
+        EGP = 5,
+        GGP = 6,
+        Hello = 7,
+        RIP = 8,
+        IS_IS = 9,
+        ES_IS = 10,
+        CISCO = 11,
+        BBN = 12,
+        OSPF = 13,
+        BGP = 14,
+        NT_AUTOSTATIC = 10002,
+        NT_STATIC = 10006,
+        NT_STATIC_NON_DOD = 10007
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MIB_IPFORWARDROW
+    {
+        public UInt32 dwForwardDest;
+        public UInt32 dwForwardMask;
+        public int dwForwardPolicy;
+        public UInt32 dwForwardNextHop;
+        public int dwForwardIfIndex;
+        public ForwardType dwForwardType;
+        public ForwardProtocol dwForwardProto;
+        public int dwForwardAge;
+        public int dwForwardNextHopAS;
+        public int dwForwardMetric1;
+        public int dwForwardMetric2;
+        public int dwForwardMetric3;
+        public int dwForwardMetric4;
+        public int dwForwardMetric5;
+    }
+
+    public static class IPHlpAPI32Wrapper
 	{
 		public const byte NO_ERROR = 0;
 		public const int FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100;
@@ -243,7 +291,10 @@ namespace IpHlpApidotnet
 		}
 
         [DllImport("iphlpapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern int GetBestInterface(UInt32 destAddr, out UInt32 bestIfIndex);
+        public static extern int GetBestInterface(uint destAddr, out uint bestIfIndex);
+
+        [DllImport("iphlpapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern int GetBestRoute(uint destAddr, uint srcAddr, ref MIB_IPFORWARDROW result);
     }
 }
 
