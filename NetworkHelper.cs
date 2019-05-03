@@ -12,7 +12,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
+using System.Reflection;
 
 namespace SocksTun
 {
@@ -31,6 +31,24 @@ namespace SocksTun
             change,
             delete,
         }
+
+        public static void SetFirewallRule()
+        {
+            var program = Assembly.GetExecutingAssembly().Location;
+            var cmd = new Process
+            {
+                StartInfo = new ProcessStartInfo("netsh", $"advfirewall firewall add rule dir=in action=allow profile=any name=\"SocksTun\" program=\"{program}\"")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                }
+            };
+
+            cmd.Start();
+        }
+
+
         private static bool RunRoute(string destAddr, string subMask, string gateway, int metric, int interfaceIndex, RouteOperation op)
         {
             var routerCmd = new Process

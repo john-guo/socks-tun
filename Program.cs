@@ -20,6 +20,8 @@ namespace SocksTun
 		{
             Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
 
+            NetworkHelper.SetFirewallRule();
+
             NetworkHelper.SetupDefaultGateway();
 
             (new SocksTunService()).Run(args);
