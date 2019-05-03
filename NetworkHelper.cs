@@ -48,6 +48,20 @@ namespace SocksTun
             cmd.Start();
         }
 
+        public static void RemoveFirewallRule()
+        {
+            var cmd = new Process
+            {
+                StartInfo = new ProcessStartInfo("netsh", $"advfirewall firewall delete rule name=\"SocksTun\"")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                }
+            };
+
+            cmd.Start();
+        }
 
         private static bool RunRoute(string destAddr, string subMask, string gateway, int metric, int interfaceIndex, RouteOperation op)
         {
@@ -164,6 +178,8 @@ namespace SocksTun
             {
                 SetDns(defaultInterfaceIndex, defaultDNS);
             }
+
+            RemoveFirewallRule();
         }
 
         private static NetworkInterface GetDefaultGatewayInterface()
