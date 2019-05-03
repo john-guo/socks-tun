@@ -8,3 +8,5 @@
 /obj/Debug
 /TestConsole
 /scripts/addrouter.bat
+/.vs
+/obj/Release

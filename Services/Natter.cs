@@ -100,8 +100,16 @@ namespace SocksTun.Services
 			running = true;
 			while (running)
 			{
-				var bytesRead = tap.Read(buf, 0, bufferSize);
-				debug.LogBuffer(">", buf, bytesRead);
+                int bytesRead;
+                try
+                {
+                    bytesRead = tap.Read(buf, 0, bufferSize);
+                } catch
+                {
+                    continue;
+                }
+
+                debug.LogBuffer(">", buf, bytesRead);
 
 				var packetOffset = 0;
 
