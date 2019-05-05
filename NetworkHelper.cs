@@ -178,8 +178,6 @@ namespace SocksTun
             {
                 SetDns(defaultInterfaceIndex, defaultDNS);
             }
-
-            RemoveFirewallRule();
         }
 
         private static NetworkInterface GetDefaultGatewayInterface()

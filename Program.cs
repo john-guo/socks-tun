@@ -18,15 +18,24 @@ namespace SocksTun
 		/// </summary>
 		static void Main(string[] args)
 		{
-            Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
+            try
+            {
+                Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
 
-            NetworkHelper.SetFirewallRule();
+                NetworkHelper.RemoveFirewallRule();
+                NetworkHelper.SetFirewallRule();
 
-            NetworkHelper.SetupDefaultGateway();
+                NetworkHelper.SetupDefaultGateway();
 
-            (new SocksTunService()).Run(args);
+                (new SocksTunService()).Run(args);
 
-            NetworkHelper.Cleanup();
+                NetworkHelper.Cleanup();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Console.ReadLine();
+            }
             return;
 		}
 	}

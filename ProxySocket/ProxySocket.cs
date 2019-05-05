@@ -425,7 +425,8 @@ namespace Org.Mentalis.Network.ProxySocket {
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            socksHandler.Close();
+            if (socksHandler != null)
+                socksHandler.Close();
         }
 
         public IAsyncResult UdpBeginReceive(AsyncCallback callback, object state) => socksHandler.UdpBeginReceive(callback, state);

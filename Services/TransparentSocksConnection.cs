@@ -69,7 +69,7 @@ namespace SocksTun.Services
 					tcpConnection != null ? tcpConnection.ProcessName : "unknown",
 					tcpConnection != null ? tcpConnection.PID : 0,
 					remoteEndPoint);
-				client.Send(Encoding.ASCII.GetBytes("No mapping\r\n"));
+				//client.Send(Encoding.ASCII.GetBytes("No mapping\r\n"));
 			}
 
 			client.Close();
