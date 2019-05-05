@@ -64,7 +64,14 @@ namespace SocksTun.Services
             localAddrBytes[localAddrBytes.Length - 1] = (byte)((localAddrBytes[localAddrBytes.Length - 1] << 1) % byte.MaxValue);
             virtualAddress = new IPAddress(localAddrBytes);
 
-            NetworkHelper.SetupTapGateway(tunTapDevice.Guid);
+            try
+            {
+                NetworkHelper.SetupTapGateway(tunTapDevice.Guid);
+            }
+            catch (Exception ex)
+            {
+                debug.Log(0, ex.ToString());
+            }
 
             BeginRun(NatterStopped, null);
 		}

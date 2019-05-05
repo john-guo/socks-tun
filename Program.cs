@@ -22,9 +22,6 @@ namespace SocksTun
             {
                 Debug.Assert(NetworkInterface.GetIsNetworkAvailable() == true);
 
-                NetworkHelper.RemoveFirewallRule();
-                NetworkHelper.SetFirewallRule();
-
                 NetworkHelper.SetupDefaultGateway();
 
                 (new SocksTunService()).Run(args);

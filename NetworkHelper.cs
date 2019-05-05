@@ -32,6 +32,33 @@ namespace SocksTun
             delete,
         }
 
+
+        private static bool SetNetworkProfilePrivate(string adapterAlias)
+        {
+            try
+            {
+                var shell = $"Get-NetConnectionProfile -InterfaceAlias '{adapterAlias}' | Set-NetConnectionProfile -NetworkCategory Private";
+                var cmd = new Process
+                {
+                    StartInfo = new ProcessStartInfo("powershell", $"-ExecutionPolicy Unrestricted -Command \"& {{{shell}}}\"")
+                    {
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                    }
+                };
+
+                return cmd.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+
+            return false;
+        }
+
+
         public static void SetFirewallRule()
         {
             var program = Assembly.GetExecutingAssembly().Location;
@@ -335,6 +362,10 @@ namespace SocksTun
                 }
             }
 
+            if (!SetNetworkProfilePrivate(link.Name))
+            {
+                throw new Exception("Cannot change to private profile");
+            }
         }
 
         public static string GetExternalIp()
