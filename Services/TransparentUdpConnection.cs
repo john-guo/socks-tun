@@ -93,7 +93,7 @@ namespace SocksTun.Services
                             proxy.Proxy.Close();
                         }
                     });
-                    Thread.Sleep(0);
+                    Thread.Sleep(3000);
                 }
                 while (running);
             }, null);
