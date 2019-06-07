@@ -45,6 +45,10 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <summary>A SOCKS5 proxy server.</summary>
 		Socks5,
         Socks5Udp,
+        /// <summary>
+        ///  No udp proxy
+        /// </summary>
+        LocalUdp,
 	}
 	/// <summary>
 	/// Implements a Socket class that can connect trough a SOCKS proxy server.
@@ -98,10 +102,11 @@ namespace Org.Mentalis.Network.ProxySocket {
 		public new void Connect(EndPoint remoteEP) {
 			if (remoteEP == null)
 				throw new ArgumentNullException("remoteEP");
-			if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || ProxyEndPoint == null)
+			if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || (ProxyEndPoint == null && ProxyType != ProxyTypes.LocalUdp))
 				base.Connect(remoteEP);
 			else {
-				base.Connect(ProxyEndPoint);
+                if (ProxyType != ProxyTypes.LocalUdp)
+    				base.Connect(ProxyEndPoint);
 				if (ProxyType == ProxyTypes.Socks4)
 					(socksHandler = new Socks4Handler(this, ProxyUser)).Negotiate((IPEndPoint)remoteEP);
 				else if (ProxyType == ProxyTypes.Socks5)
@@ -109,6 +114,8 @@ namespace Org.Mentalis.Network.ProxySocket {
 #if USEUDP
                 else if (ProxyType == ProxyTypes.Socks5Udp)
                     (socksHandler = new Socks5UdpHandler(this, ProxyUser, ProxyPass)).Negotiate((IPEndPoint)remoteEP);
+                else if (ProxyType == ProxyTypes.LocalUdp)
+                    socksHandler = new LocalUdpHandler();
 #endif
             }
         }
@@ -128,17 +135,20 @@ namespace Org.Mentalis.Network.ProxySocket {
 				throw new ArgumentNullException("host");
 			if (port <= 0 || port > 65535)
 				throw new ArgumentException("Invalid port.");
-			if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || ProxyEndPoint == null)
+			if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || (ProxyEndPoint == null && ProxyType != ProxyTypes.LocalUdp))
 				base.Connect(new IPEndPoint(Dns.GetHostEntry(host).AddressList[0], port));
 			else {
-				base.Connect(ProxyEndPoint);
-				if (ProxyType == ProxyTypes.Socks4)
+                if (ProxyType != ProxyTypes.LocalUdp)
+                    base.Connect(ProxyEndPoint);
+                if (ProxyType == ProxyTypes.Socks4)
 					(socksHandler = new Socks4Handler(this, ProxyUser)).Negotiate(host, port);
 				else if (ProxyType == ProxyTypes.Socks5)
 					(socksHandler = new Socks5Handler(this, ProxyUser, ProxyPass)).Negotiate(host, port);
 #if USEUDP
                 else if (ProxyType == ProxyTypes.Socks5Udp)
                     (socksHandler = new Socks5UdpHandler(this, ProxyUser, ProxyPass)).Negotiate(host, port);
+                else if (ProxyType == ProxyTypes.LocalUdp)
+                    socksHandler = new LocalUdpHandler();
 #endif
             }
         }
@@ -155,7 +165,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		public new IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state) {
 			if (remoteEP == null || callback == null)
 				throw new ArgumentNullException();
-            if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || ProxyEndPoint == null)
+            if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || (ProxyEndPoint == null && ProxyType != ProxyTypes.LocalUdp))
             {
                 return base.BeginConnect(remoteEP, callback, state);
             }
@@ -177,6 +187,10 @@ namespace Org.Mentalis.Network.ProxySocket {
                 {
                     AsyncResult = (new Socks5UdpHandler(this, ProxyUser, ProxyPass)).BeginNegotiate((IPEndPoint)remoteEP, new HandShakeComplete(this.OnHandShakeComplete), ProxyEndPoint);
                     return AsyncResult;
+                }
+                else if (ProxyType == ProxyTypes.LocalUdp)
+                {
+                    throw new NotSupportedException();
                 }
 #endif
                 return null;
@@ -200,7 +214,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 			if (port <= 0 || port >  65535)
 				throw new ArgumentException();
 			CallBack = callback;
-            if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || ProxyEndPoint == null)
+            if (this.ProtocolType != ProtocolType.Tcp || ProxyType == ProxyTypes.None || (ProxyEndPoint == null && ProxyType != ProxyTypes.LocalUdp))
             {
                 RemotePort = port;
                 AsyncResult = BeginDns(host, new HandShakeComplete(this.OnHandShakeComplete));
@@ -224,6 +238,11 @@ namespace Org.Mentalis.Network.ProxySocket {
                     AsyncResult = (new Socks5UdpHandler(this, ProxyUser, ProxyPass)).BeginNegotiate(host, port, new HandShakeComplete(this.OnHandShakeComplete), ProxyEndPoint);
                     return AsyncResult;
                 }
+                else if (ProxyType == ProxyTypes.LocalUdp)
+                {
+                    throw new NotSupportedException();
+                }
+
 #endif
                 return null;
             }

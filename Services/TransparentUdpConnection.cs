@@ -24,6 +24,7 @@ namespace SocksTun.Services
 
         public delegate void ConfigureProxySocket(ProxySocket proxySocket, IPEndPoint requestedEndPoint);
         private volatile bool running = false;
+        private bool useLocalUdp = false;
 
         class CountedProxySocket
         {
@@ -176,13 +177,23 @@ namespace SocksTun.Services
                 {
                     proxy = new CountedProxySocket()
                     {
-                        Proxy = new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+                        Proxy =  useLocalUdp ? new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ProxyType = ProxyTypes.LocalUdp } : new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
                     };
 
                     var realProxy = proxy.Proxy;
                     configureProxySocket(realProxy, null);
                     var ep = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
-                    realProxy.Connect(ep);
+                    try
+                    {
+                        realProxy.Connect(ep);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        useLocalUdp = true;
+                        proxy.Proxy = new ProxySocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { ProxyType = ProxyTypes.LocalUdp };
+                        realProxy = proxy.Proxy;
+                        realProxy.Connect(ep);
+                    }
 
                     connectionTracker[new Connection(ProtocolType.Udp, realProxy.UdpEndPoint, connection.Destination)] = dummyconn;
 

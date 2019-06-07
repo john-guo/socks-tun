@@ -157,7 +157,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 			byte[] buffer = ReadBytes(4);
 			if (buffer[1] != 0) {
 				Server.Close();
-				throw new ProxyException(buffer[1]);
+				throw new NotSupportedException("UDP");
 			}
 			switch(buffer[3]) {
                 case 4:
@@ -353,21 +353,48 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <param name="buffer">The received reply</param>
 		/// <exception cref="ProtocolViolationException">The received reply is invalid.</exception>
 		private void ProcessReply(byte[] buffer) {
-			switch(buffer[3]) {
-				case 1:
-					Buffer = new byte[5]; //IPv4 address with port - 1 byte
-					break;
-				case 3:
-					Buffer = new byte[buffer[4] + 2]; //domain name with port
-					break;
-				case 4:
-					buffer = new byte[17]; //IPv6 address with port - 1 byte
-					break;
-				default:
-					throw new ProtocolViolationException();
-			}
-			Received = 0;
-			Server.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, new AsyncCallback(this.OnReadLast), Server);
+            if (buffer[1] != 0)
+            {
+                Server.Close();
+                throw new NotSupportedException("UDP");
+            }
+            switch (buffer[3])
+            {
+                case 4:
+                case 1:
+                    {
+                        var addrlen = buffer[3] == 1 ? 4 : 16;
+
+                        buffer = ReadBytes(addrlen); //IPv4 address with port
+                        var ipAddress = new IPAddress(buffer);
+
+                        buffer = ReadBytes(2);
+                        var port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, 0));
+
+                        udpClient.Connect(ipAddress, port);
+                    }
+                    break;
+                case 3:
+                    {
+                        buffer = ReadBytes(1);
+                        buffer = ReadBytes(buffer[0]); //domain name with port
+
+                        var address = Encoding.UTF8.GetString(buffer);
+
+                        buffer = ReadBytes(2);
+                        var port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, 0));
+
+                        udpClient.Connect(address, port);
+                    }
+                    break;
+
+                default:
+                    Server.Close();
+                    throw new ProtocolViolationException();
+            }
+
+			//Received = 0;
+			//Server.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, new AsyncCallback(this.OnReadLast), Server);
 		}
 		/// <summary>
 		/// Called when the last bytes are read from the socket.

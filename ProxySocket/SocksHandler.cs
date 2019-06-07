@@ -48,7 +48,7 @@ namespace Org.Mentalis.Network.ProxySocket {
 		/// <param name="user">The username to use when authenticating with the server.</param>
 		/// <exception cref="ArgumentNullException"><c>server</c> -or- <c>user</c> is null.</exception>
 		public SocksHandler(Socket server, string user) {
-			Server = server;
+  			Server = server;
 			Username = user;
 		}
 		/// <summary>
@@ -103,8 +103,6 @@ namespace Org.Mentalis.Network.ProxySocket {
 				return m_Server;
 			}
 			set {
-				if (value == null)
-					throw new ArgumentNullException();
 				m_Server = value;
 			}
 		}
@@ -118,8 +116,6 @@ namespace Org.Mentalis.Network.ProxySocket {
 				return m_Username;
 			}
 			set {
-				if (value == null)
-					throw new ArgumentNullException();
 				m_Username = value;
 			}
 		}
